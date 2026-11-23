@@ -44,7 +44,7 @@ DEFAULT_SETTINGS = {
     "site_title": "软件库",
     "site_tagline": "专属于你的软件收藏",
     "site_icon": "/static/favicon.svg",
-    "theme": "light",
+    "theme": "system",
     "language": "zh-CN",
 }
 

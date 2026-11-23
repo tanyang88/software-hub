@@ -401,7 +401,7 @@
   function normalizeCols(value) {
     const raw = String(value == null ? '' : value);
     if (raw === 'icon') return 'icon';
-    return raw === '1' ? 1 : 2;
+    return raw === '2' ? 2 : 1;
   }
 
   const state = {
@@ -432,7 +432,7 @@
       site_title: '软件库',
       site_tagline: '',
       site_icon: '/static/favicon.svg',
-      theme: 'light',
+      theme: 'system',
       language: 'zh-CN',
     },
     lang: 'zh-CN',
@@ -623,7 +623,7 @@
   function preferredTheme() {
     const stored = localStorage.getItem(THEME_KEY);
     if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
-    return (state.settings && state.settings.theme) || 'light';
+    return (state.settings && state.settings.theme) || 'system';
   }
 
   function resolveTheme(theme) {
