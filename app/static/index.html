@@ -452,9 +452,13 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
     </div>
     <div class="modal-body">
       <p class="hint-text" id="confirmText"></p>
+      <div class="confirm-input" id="confirmInputWrap" hidden>
+        <input type="text" id="confirmInput" maxlength="20" autocomplete="off">
+      </div>
       <div class="delete-options">
         <button type="button" class="btn btn-ghost delete-opt" id="confirmCancel" data-i18n="delete.cancel">取消</button>
         <button type="button" class="btn btn-danger delete-opt" id="confirmOk" data-i18n="confirm.ok">删除</button>
+        <button type="button" class="btn btn-ghost delete-opt confirm-alt" id="confirmAlt" hidden>复制卡片</button>
       </div>
     </div>
   </div>

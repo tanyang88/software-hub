@@ -43,6 +43,8 @@
       'content.perPage': '每页显示',
       'content.sort': '排序',
       'content.moveTo': '移动至',
+      'content.moveCard': '移动卡片',
+      'content.copyCard': '复制卡片',
       'bulk.enter': '多选',
       'bulk.exit': '取消多选',
       'bulk.delete': '删除',
@@ -51,6 +53,10 @@
       'bulk.moveTitle': '移动卡片',
       'bulk.moveText': '把选中的 {n} 个卡片移动到「{cat}」？该分类下已有的卡片保持不变。',
       'bulk.moveDone': '已把 {n} 个卡片移动到「{cat}」',
+      'bulk.copyTitle': '复制卡片',
+      'bulk.copyText': '把选中的 {n} 个卡片复制到「{cat}」？原分类下的卡片会保留，相当于给这些卡片增加一个新分类。',
+      'bulk.copyDone': '已把 {n} 个卡片复制到「{cat}」',
+      'bulk.copyNone': '这些卡片已经在「{cat}」里了',
       'bulk.deleteTitle': '删除卡片',
       'bulk.deleteText': '确定删除选中的 {n} 个卡片吗？只删除「{cat}」分类下的卡片，卡片在其他分类下仍然保留。',
       'bulk.deleteTextAll': '确定删除选中的 {n} 个卡片吗？这会删除这些卡片的所有分类，且无法恢复。',
@@ -62,6 +68,12 @@
       'confirm.ok': '删除',
       'confirm.cancel': '取消',
       'categoryDeleteTitle': '删除分类',
+      'cat.renameTitle': '重命名分类',
+      'cat.renameHint': '给分类「{name}」换一个新名字',
+      'cat.renamePlaceholder': '分类名称',
+      'cat.renameSave': '保存',
+      'cat.renameEmpty': '分类名称不能为空',
+      'toast.categoryRenamed': '分类已重命名为「{name}」',
       'categoryDeleteText': '确定删除分类「{name}」吗？分类下的卡片不会被删除。仍属于其他分类的卡片只从本分类移除；不再属于任何分类的卡片会归入「未分类」。',
       'categoryDeleteTextOne': '「{name}」下有 {n} 张卡片。删除后这些卡片不会被删除，会归入「未分类」。确定删除这个分类吗？',
       'count.total': '共 {n} 个软件',
@@ -171,8 +183,7 @@
       'settings.save': '保存设置',
       'settings.close': '关闭',
       'toast.categoryAdded': '已添加分类「{name}」',
-      'toast.categoryDeleted': '分类已删除',
-      'toast.saved': '已保存修改',
+      'toast.categoryDeleted': '分类已删除',      'toast.saved': '已保存修改',
       'toast.added': '已添加软件',
       'toast.deleted': '已删除',
       'toast.uploading': '上传中…',
@@ -229,6 +240,8 @@
       'content.perPage': 'Per page',
       'content.sort': 'Sort',
       'content.moveTo': 'Move to',
+      'content.moveCard': 'Move card',
+      'content.copyCard': 'Copy card',
       'bulk.enter': 'Select',
       'bulk.exit': 'Cancel select',
       'bulk.delete': 'Delete',
@@ -237,6 +250,10 @@
       'bulk.moveTitle': 'Move cards',
       'bulk.moveText': 'Move the {n} selected cards to “{cat}”? Cards already in that category are kept.',
       'bulk.moveDone': 'Moved {n} cards to “{cat}”',
+      'bulk.copyTitle': 'Copy cards',
+      'bulk.copyText': 'Copy the {n} selected cards to “{cat}”? The cards stay in their current category — this adds one more category to them.',
+      'bulk.copyDone': 'Copied {n} cards to “{cat}”',
+      'bulk.copyNone': 'Those cards are already in “{cat}”',
       'bulk.deleteTitle': 'Delete cards',
       'bulk.deleteText': 'Delete the {n} selected cards? Only the cards in “{cat}” are removed; cards in other categories are kept.',
       'bulk.deleteTextAll': 'Delete the {n} selected cards? This removes them from every category and cannot be undone.',
@@ -248,6 +265,12 @@
       'confirm.ok': 'Delete',
       'confirm.cancel': 'Cancel',
       'categoryDeleteTitle': 'Delete category',
+      'cat.renameTitle': 'Rename category',
+      'cat.renameHint': 'Give category “{name}” a new name',
+      'cat.renamePlaceholder': 'Category name',
+      'cat.renameSave': 'Save',
+      'cat.renameEmpty': 'Category name cannot be empty',
+      'toast.categoryRenamed': 'Category renamed to “{name}”',
       'categoryDeleteText': 'Delete category “{name}”? Cards in it are not deleted: cards that still belong to other categories are only removed here, the rest move to Uncategorized.',
       'categoryDeleteTextOne': '“{name}” has {n} cards. They are not deleted — they move to Uncategorized. Delete this category?',
       'count.total': '{n} items',
@@ -495,6 +518,9 @@
     confirmTitle: $('#confirmTitle'),
     confirmText: $('#confirmText'),
     confirmOk: $('#confirmOk'),
+    confirmAlt: $('#confirmAlt'),
+    confirmInput: $('#confirmInput'),
+    confirmInputWrap: $('#confirmInputWrap'),
   };
 
   // ---------------- 基础工具 ----------------
@@ -895,10 +921,14 @@
 
     for (const cat of state.categories) {
       const active = String(state.activeCategory) === String(cat.id);
+      const actions = state.user
+        ? `<button class="cat-rename" data-rename="${cat.id}" title="${escapeHtml(t('cat.renameTitle'))}">✎</button>
+           <button class="cat-del" data-del="${cat.id}" title="${escapeHtml(t('categoryDeleteTitle'))}">×</button>`
+        : '<span class="cat-del ghost"></span>';
       html += `
         <div class="cat-item ${active ? 'active' : ''}" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" draggable="${state.user ? 'true' : 'false'}">
           <span class="cat-name" title="${escapeHtml(cat.name)}">${escapeHtml(cat.name)}</span>
-          ${state.user ? `<button class="cat-del" data-del="${cat.id}">×</button>` : '<span class="cat-del ghost"></span>'}
+          ${actions}
           <span class="cat-count">${cat.count || 0}</span>
         </div>`;
     }
@@ -948,6 +978,28 @@
     });
   }
 
+  function renameCategoryAction(cat) {
+    askConfirm({
+      title: t('cat.renameTitle'),
+      text: t('cat.renameHint', { name: cat.name }),
+      okText: t('cat.renameSave'),
+      tone: 'primary',
+      input: { value: cat.name, placeholder: t('cat.renamePlaceholder'), maxlength: 20 },
+      onOk: async (value) => {
+        const name = (value || '').trim();
+        if (!name) throw new Error(t('cat.renameEmpty'));
+        if (name === cat.name) return;
+        await api(`/api/categories/${cat.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ name }),
+        });
+        await loadCategories();
+        await loadSoftware();
+        toast(t('toast.categoryRenamed', { name }));
+      },
+    });
+  }
+
   // ---------------- 软件卡片 ----------------
   function logoHtml(item) {
     const logo = safeHref(item.logo);
@@ -974,7 +1026,7 @@
     const map = platforms || {};
     const checked = PLATFORMS.filter((p) => map[p.key]);
     if (!checked.length) return '';
-    const parts = checked.map((p) => `<span>☑️ ${p.label}</span>`);
+    const parts = checked.map((p) => `<span>${p.label}</span>`);
     return `
       <div class="card-line">
         <span class="label">${escapeHtml(t('card.support'))}</span>
@@ -1174,25 +1226,49 @@
       return;
     }
     const cat = state.categories.find((c) => String(c.id) === String(to));
+    const catName = cat ? cat.name : '';
+
+    async function moveCards() {
+      await api('/api/software/bulk_move', {
+        method: 'POST',
+        body: JSON.stringify({
+          ids: ids.map(Number),
+          to_category_id: Number(to),
+          from_category_id: bulkFromCategory() || null,
+        }),
+      });
+      state.selected.clear();
+      els.bulkMoveSelect.value = '';
+      await refreshAll();
+      toast(t('bulk.moveDone', { n: ids.length, cat: catName }));
+    }
+
+    async function copyCards() {
+      const res = await api('/api/software/bulk_copy', {
+        method: 'POST',
+        body: JSON.stringify({
+          ids: ids.map(Number),
+          to_category_id: Number(to),
+        }),
+      });
+      state.selected.clear();
+      els.bulkMoveSelect.value = '';
+      await refreshAll();
+      if (res && res.copied) {
+        toast(t('bulk.copyDone', { n: res.copied, cat: catName }));
+      } else {
+        toast(t('bulk.copyNone', { cat: catName }), true);
+      }
+    }
+
     askConfirm({
       title: t('bulk.moveTitle'),
-      text: t('bulk.moveText', { n: ids.length, cat: cat ? cat.name : '' }),
-      okText: t('content.moveTo'),
+      text: t('bulk.moveText', { n: ids.length, cat: catName }),
+      okText: t('content.moveCard'),
+      altText: t('content.copyCard'),
       tone: 'primary',
-      onOk: async () => {
-        await api('/api/software/bulk_move', {
-          method: 'POST',
-          body: JSON.stringify({
-            ids: ids.map(Number),
-            to_category_id: Number(to),
-            from_category_id: bulkFromCategory() || null,
-          }),
-        });
-        state.selected.clear();
-        els.bulkMoveSelect.value = '';
-        await refreshAll();
-        toast(t('bulk.moveDone', { n: ids.length, cat: cat ? cat.name : '' }));
-      },
+      onOk: moveCards,
+      onAlt: copyCards,
     });
   }
 
@@ -1225,36 +1301,70 @@
 
   // ---------------- 通用确认弹窗 ----------------
   let confirmHandler = null;
+  let confirmAltHandler = null;
 
   function askConfirm(options) {
-    confirmHandler = options && options.onOk ? options.onOk : null;
-    els.confirmTitle.textContent = (options && options.title) || t('confirm.ok');
-    els.confirmText.textContent = (options && options.text) || '';
-    els.confirmOk.textContent = (options && options.okText) || t('confirm.ok');
-    els.confirmOk.classList.toggle('btn-danger', !options || options.tone !== 'primary');
-    els.confirmOk.classList.toggle('btn-primary', !!options && options.tone === 'primary');
+    const opts = options || {};
+    confirmHandler = opts.onOk || null;
+    confirmAltHandler = opts.onAlt || null;
+    els.confirmTitle.textContent = opts.title || t('confirm.ok');
+    els.confirmText.textContent = opts.text || '';
+    els.confirmOk.textContent = opts.okText || t('confirm.ok');
+    els.confirmOk.classList.toggle('btn-danger', opts.tone !== 'primary');
+    els.confirmOk.classList.toggle('btn-primary', opts.tone === 'primary');
     els.confirmOk.disabled = false;
+
+    if (opts.altText) {
+      els.confirmAlt.textContent = opts.altText;
+      els.confirmAlt.hidden = false;
+      els.confirmAlt.disabled = false;
+    } else {
+      els.confirmAlt.hidden = true;
+    }
+
+    if (opts.input) {
+      els.confirmInputWrap.hidden = false;
+      els.confirmInput.value = opts.input.value || '';
+      els.confirmInput.placeholder = opts.input.placeholder || '';
+      els.confirmInput.maxLength = opts.input.maxlength || 20;
+    } else {
+      els.confirmInputWrap.hidden = true;
+      els.confirmInput.value = '';
+    }
+
     els.confirmModal.hidden = false;
+    if (opts.input) {
+      setTimeout(() => {
+        els.confirmInput.focus();
+        els.confirmInput.select();
+      }, 0);
+    }
   }
 
   function closeConfirm() {
     els.confirmModal.hidden = true;
     confirmHandler = null;
+    confirmAltHandler = null;
+    els.confirmInput.value = '';
   }
 
-  async function runConfirm() {
-    if (!confirmHandler) {
+  async function runConfirm(which) {
+    const isAlt = which === 'alt';
+    const fn = isAlt ? confirmAltHandler : confirmHandler;
+    const btn = isAlt ? els.confirmAlt : els.confirmOk;
+    if (!fn) {
       closeConfirm();
       return;
     }
-    const fn = confirmHandler;
-    els.confirmOk.disabled = true;
+    const hasInput = !els.confirmInputWrap.hidden;
+    const value = hasInput ? els.confirmInput.value.trim() : '';
+    btn.disabled = true;
     try {
-      await fn();
-      els.confirmOk.disabled = false;
-      closeConfirm();
+      const keepOpen = await fn(value);
+      btn.disabled = false;
+      if (keepOpen !== false) closeConfirm();
     } catch (err) {
-      els.confirmOk.disabled = false;
+      btn.disabled = false;
       toast(err.message, true);
     }
   }
@@ -1607,9 +1717,16 @@
     bulkRemove();
   });
 
-  $('#confirmOk').addEventListener('click', runConfirm);
+  $('#confirmOk').addEventListener('click', () => runConfirm('ok'));
+  $('#confirmAlt').addEventListener('click', () => runConfirm('alt'));
   $('#confirmCancel').addEventListener('click', closeConfirm);
   $('#confirmClose').addEventListener('click', closeConfirm);
+  els.confirmInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      runConfirm('ok');
+    }
+  });
   els.confirmModal.addEventListener('click', (e) => {
     if (e.target === els.confirmModal) closeConfirm();
   });
@@ -1709,6 +1826,13 @@
   });
 
   els.categoryList.addEventListener('click', async (event) => {
+    const renameBtn = event.target.closest('[data-rename]');
+    if (renameBtn) {
+      event.stopPropagation();
+      const cat = state.categories.find((c) => String(c.id) === String(renameBtn.dataset.rename));
+      if (cat) renameCategoryAction(cat);
+      return;
+    }
     const delBtn = event.target.closest('[data-del]');
     if (delBtn) {
       event.stopPropagation();

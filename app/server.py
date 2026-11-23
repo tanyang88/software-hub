@@ -850,6 +850,53 @@ def bulk_move_software(body):
         conn.close()
 
 
+def bulk_copy_software(body):
+    """批量把卡片复制到指定分类（相当于给卡片多挂一个分类）。
+
+    与 bulk_move_software 的差别只在于：不删除原来的分类归属，
+    因此原分类下的卡片继续保留，同时出现/关联到 to_category_id。
+    """
+    ids = _parse_id_list(body)
+    try:
+        to_id = int(body.get("to_category_id"))
+    except (TypeError, ValueError):
+        raise ValueError("请选择要复制到的分类")
+
+    conn = connect()
+    try:
+        if not conn.execute("SELECT id FROM categories WHERE id = ?", (to_id,)).fetchone():
+            raise LookupError("目标分类不存在")
+        copied = 0
+        existed = 0
+        for sid in ids:
+            if not conn.execute("SELECT id FROM software WHERE id = ?", (sid,)).fetchone():
+                continue
+            if conn.execute(
+                "SELECT 1 FROM software_categories WHERE software_id = ? AND category_id = ?",
+                (sid, to_id),
+            ).fetchone():
+                existed += 1
+                continue
+            conn.execute(
+                "INSERT OR IGNORE INTO software_categories (software_id, category_id) VALUES (?, ?)",
+                (sid, to_id),
+            )
+            conn.execute(
+                "UPDATE software SET updated_at = datetime('now', 'localtime') WHERE id = ?",
+                (sid,),
+            )
+            copied += 1
+        conn.commit()
+        return {
+            "ok": True,
+            "copied": copied,
+            "existed": existed,
+            "to_category_id": to_id,
+        }
+    finally:
+        conn.close()
+
+
 def bulk_delete_software(body):
     """批量删除卡片。
 
@@ -1199,6 +1246,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(create_software(self.read_body()), 201)
             if path == "/api/software/bulk_move":
                 return self.send_json(bulk_move_software(self.read_body()))
+            if path == "/api/software/bulk_copy":
+                return self.send_json(bulk_copy_software(self.read_body()))
             if path == "/api/software/bulk_delete":
                 return self.send_json(bulk_delete_software(self.read_body()))
             match_pin = re.fullmatch(r"/api/software/(\d+)/pin", path)
