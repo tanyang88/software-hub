@@ -650,14 +650,36 @@
     }
   }
 
+  function renderBrandMark(name, iconHref) {
+    const mark = els.brandMark;
+    const letter = (name || '').slice(0, 1) || '软';
+    mark.innerHTML = '';
+    mark.classList.remove('has-icon');
+    if (!iconHref) {
+      mark.textContent = letter;
+      return;
+    }
+    const img = document.createElement('img');
+    img.className = 'brand-icon';
+    img.alt = '';
+    img.decoding = 'async';
+    img.addEventListener('error', () => {
+      mark.classList.remove('has-icon');
+      mark.textContent = letter;
+    });
+    img.src = iconHref;
+    mark.classList.add('has-icon');
+    mark.appendChild(img);
+  }
+
   function applySite(settings) {
     state.settings = settings;
     state.lang = settings.language === 'en' ? 'en' : 'zh-CN';
     const name = settings.site_name || '软件库';
-    els.siteName.textContent = name;
-    els.brandMark.textContent = name.slice(0, 1) || '软';
-    document.title = settings.site_title || name;
     const iconHref = safeHref(settings.site_icon) || '/static/favicon.svg';
+    els.siteName.textContent = name;
+    renderBrandMark(name, iconHref);
+    document.title = settings.site_title || name;
     let icon = document.querySelector('link[rel="icon"]');
     if (!icon) {
       icon = document.createElement('link');
