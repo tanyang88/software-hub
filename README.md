@@ -170,6 +170,17 @@ cd software-hub
 python app/server.py
 ```
 
+### Windows 一键启停
+
+项目根目录自带四个脚本，免去记环境变量：
+
+| 脚本 | 作用 |
+|---|---|
+| `start.bat` / `start.ps1` | 设置好 `PORT=8080`、`DATA_DIR=./data` 后隐藏窗口启动服务；若 8080 已有旧实例会先关掉再启动；失败时打印 `data/server.err.log` 最后几行 |
+| `stop.bat` / `stop.ps1` | 停止监听 8080 的进程，数据目录不动 |
+
+双击 `start.bat` 即可，浏览器打开 <http://127.0.0.1:8080>。日志写在 `data/server.out.log` 与 `data/server.err.log`。
+
 默认监听 `0.0.0.0:8080`，数据写入项目下的 `data/`。
 
 ## 配置项
