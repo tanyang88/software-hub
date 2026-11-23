@@ -76,7 +76,7 @@ SORT_OPTIONS = {
 PINNED_FIRST = "s.pinned DESC, "
 
 # 支持系统与授权方式（与前端选项保持一致）
-PLATFORM_KEYS = ("windows", "mac", "linux", "android", "ios")
+PLATFORM_KEYS = ("windows", "mac", "linux", "android", "ios", "harmonyos")
 LICENSE_KEYS = ("free", "subscription", "onetime", "metered", "freemium")
 
 

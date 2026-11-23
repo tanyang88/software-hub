@@ -10,6 +10,7 @@
     { key: 'linux', label: 'Linux' },
     { key: 'android', label: 'Android' },
     { key: 'ios', label: 'iOS' },
+    { key: 'harmonyos', label: 'HarmonyOS' },
   ];
 
   const LICENSES = ['free', 'subscription', 'onetime', 'metered', 'freemium'];

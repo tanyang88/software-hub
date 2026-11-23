@@ -212,7 +212,7 @@ python app/server.py
 |---|---|---|
 | GET | `/api/health` | 健康检查 |
 | GET | `/api/categories` | 分类列表，返回 `{ items, total, uncategorized }`（`uncategorized` 为没有归入任何分类的软件数） |
-| GET | `/api/software?category_id=all&page=1&page_size=20&sort=default&q=&platform=&license=` | 软件分页列表（`page_size` 默认 20、上限 120）；`category_id` 取 `all` / `uncategorized` / 具体分类 id；`q` 非空时按名称/简介搜索并忽略 `category_id`；`platform` 取 `windows`/`mac`/`linux`/`android`/`ios`，`license` 取 `free`/`subscription`/`onetime`/`metered`/`freemium`，留空即不过滤；各条件可叠加；置顶卡片始终排在最前 |
+| GET | `/api/software?category_id=all&page=1&page_size=20&sort=default&q=&platform=&license=` | 软件分页列表（`page_size` 默认 20、上限 120）；`category_id` 取 `all` / `uncategorized` / 具体分类 id；`q` 非空时按名称/简介搜索并忽略 `category_id`；`platform` 取 `windows`/`mac`/`linux`/`android`/`ios`/`harmonyos`，`license` 取 `free`/`subscription`/`onetime`/`metered`/`freemium`，留空即不过滤；各条件可叠加；置顶卡片始终排在最前 |
 | GET | `/api/settings` | 站点设置 |
 | GET | `/api/auth/me` | 当前登录状态 |
 
@@ -241,7 +241,7 @@ python app/server.py
 
 `sort` 白名单：`default`、`updated`（最新更新）、`oldest`（最早上架）、`name_asc`（A-Z）、`name_desc`（Z-A）。
 
-软件对象字段：`name`、`category_ids`（所属分类 id 数组，可为空）、`category_names`（分类名称数组，只读返回）、`description`、`logo`、`url_home`、`url_github`、`url_release`、`url_doc`、`downloads`（`[{text, link}]`）、`platforms`（`{windows, mac, linux, android, ios}` 布尔值）、`licenses`（授权方式字符串数组，取值 `free`/`subscription`/`onetime`/`metered`/`freemium`，空数组合法）、`pinned`（是否置顶）、`card_color`（卡片背景色，`#rgb` / `#rrggbb` / `#rrggbbaa`，空串为默认背景）。
+软件对象字段：`name`、`category_ids`（所属分类 id 数组，可为空）、`category_names`（分类名称数组，只读返回）、`description`、`logo`、`url_home`、`url_github`、`url_release`、`url_doc`、`downloads`（`[{text, link}]`）、`platforms`（`{windows, mac, linux, android, ios, harmonyos}` 布尔值）、`licenses`（授权方式字符串数组，取值 `free`/`subscription`/`onetime`/`metered`/`freemium`，空数组合法）、`pinned`（是否置顶）、`card_color`（卡片背景色，`#rgb` / `#rrggbb` / `#rrggbbaa`，空串为默认背景）。
 
 ## 常见问题
 
