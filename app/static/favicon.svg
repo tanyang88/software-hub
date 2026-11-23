@@ -1,4 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect x="0" y="0" width="32" height="32" rx="8" fill="#2563eb"/>
-  <text x="16" y="22" font-family="Microsoft YaHei, sans-serif" font-size="15" font-weight="700" fill="#ffffff" text-anchor="middle">软</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="软件库">
+  <rect width="1024" height="1024" rx="226" ry="226" fill="#2563eb"/>
+  <rect x="150" y="238" width="430" height="124" rx="46" ry="46" fill="#ffffff"/>
+  <rect x="150" y="346" width="724" height="480" rx="58" ry="58" fill="#ffffff"/>
+  <rect x="332" y="410" width="150" height="150" rx="34" ry="34" fill="#2563eb"/>
+  <rect x="542" y="410" width="150" height="150" rx="34" ry="34" fill="#2563eb"/>
+  <rect x="332" y="620" width="150" height="150" rx="34" ry="34" fill="#2563eb"/>
+  <rect x="542" y="620" width="150" height="150" rx="34" ry="34" fill="#2563eb"/>
 </svg>

@@ -1166,7 +1166,7 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/uploads/"):
                 return self.send_file(safe_join(UPLOAD_DIR, path[len("/uploads/"):]))
             if path == "/favicon.ico":
-                return self.send_file(STATIC_DIR / "favicon.svg")
+                return self.send_file(STATIC_DIR / "favicon.ico")
             return self.send_error_json("接口不存在", 404)
         except AuthError as exc:
             return self.send_error_json(str(exc), 401)
