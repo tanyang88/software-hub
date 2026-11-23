@@ -1544,6 +1544,20 @@
     state.editingId = null;
   }
 
+  // 点遮罩空白处关闭弹窗：必须按下和抬起都在遮罩本身上，
+  // 否则在输入框里按住拖选文字、拖到对话框外松手会被误判成点击而关掉弹窗。
+  function bindMaskClose(mask, close) {
+    if (!mask) return;
+    let armed = false;
+    mask.addEventListener('mousedown', (event) => {
+      armed = event.target === mask;
+    });
+    mask.addEventListener('mouseup', (event) => {
+      if (armed && event.target === mask) close();
+      armed = false;
+    });
+  }
+
   async function submitSoftware(event) {
     event.preventDefault();
     els.formError.textContent = '';
@@ -1727,9 +1741,7 @@
       runConfirm('ok');
     }
   });
-  els.confirmModal.addEventListener('click', (e) => {
-    if (e.target === els.confirmModal) closeConfirm();
-  });
+  bindMaskClose(els.confirmModal, closeConfirm);
 
   els.colsSelect.addEventListener('change', async () => {
     state.cols = normalizeCols(els.colsSelect.value);
@@ -1978,9 +1990,7 @@
   els.btnLogin.addEventListener('click', openLogin);
   $('#closeLogin').addEventListener('click', () => { els.loginModal.hidden = true; });
   $('#cancelLogin').addEventListener('click', () => { els.loginModal.hidden = true; });
-  els.loginModal.addEventListener('click', (e) => {
-    if (e.target === els.loginModal) els.loginModal.hidden = true;
-  });
+  bindMaskClose(els.loginModal, () => { els.loginModal.hidden = true; });
   els.loginForm.addEventListener('submit', submitLogin);
   $('#forgotLink').addEventListener('click', () => { $('#forgotModal').hidden = false; });
   $('#closeForgot').addEventListener('click', () => { $('#forgotModal').hidden = true; });
@@ -1989,9 +1999,7 @@
   els.btnSettings.addEventListener('click', openSettings);
   $('#closeSettings').addEventListener('click', () => { els.settingsModal.hidden = true; });
   $('#cancelSettings').addEventListener('click', () => { els.settingsModal.hidden = true; });
-  els.settingsModal.addEventListener('click', (e) => {
-    if (e.target === els.settingsModal) els.settingsModal.hidden = true;
-  });
+  bindMaskClose(els.settingsModal, () => { els.settingsModal.hidden = true; });
   $('#saveSettings').addEventListener('click', saveSettings);
   $('#saveAccount').addEventListener('click', saveAccount);
   els.btnLogoutTop.addEventListener('click', logout);
@@ -2090,9 +2098,7 @@
 
   $('#closeModal').addEventListener('click', closeModal);
   $('#cancelModal').addEventListener('click', closeModal);
-  els.modal.addEventListener('click', (e) => {
-    if (e.target === els.modal) closeModal();
-  });
+  bindMaskClose(els.modal, closeModal);
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     [els.modal, els.loginModal, els.settingsModal, $('#forgotModal'), els.deleteModal, els.confirmModal].forEach((m) => {
@@ -2106,9 +2112,7 @@
   $('#deleteAll').addEventListener('click', () => confirmDelete('all'));
   $('#deleteCancel').addEventListener('click', closeDeleteDialog);
   $('#closeDelete').addEventListener('click', closeDeleteDialog);
-  els.deleteModal.addEventListener('click', (e) => {
-    if (e.target === els.deleteModal) closeDeleteDialog();
-  });
+  bindMaskClose(els.deleteModal, closeDeleteDialog);
 
   els.logoUrl.addEventListener('input', () => {
     state.modalLogo = els.logoUrl.value.trim();
