@@ -1881,22 +1881,24 @@
     });
   }
 
-  // 卡片区滚动条：滚动时显示，静止 1.2s 后自动隐藏
-  const cardScrollEl = document.getElementById('cardScroll');
-  if (cardScrollEl) {
-    let scrollHideTimer = 0;
+  // 滚动条：滚动时显示，静止 1.2s 后自动隐藏（卡片区 + 左侧分类）
+  function bindAutoHideScrollbar(el) {
+    if (!el) return;
+    let hideTimer = 0;
     const markScrolling = () => {
-      cardScrollEl.classList.add('is-scrolling');
-      clearTimeout(scrollHideTimer);
-      scrollHideTimer = setTimeout(() => cardScrollEl.classList.remove('is-scrolling'), 1200);
+      el.classList.add('is-scrolling');
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => el.classList.remove('is-scrolling'), 1200);
     };
-    cardScrollEl.addEventListener('scroll', markScrolling, { passive: true });
-    cardScrollEl.addEventListener('wheel', markScrolling, { passive: true });
-    cardScrollEl.addEventListener('touchmove', markScrolling, { passive: true });
-    cardScrollEl.addEventListener('keydown', (e) => {
+    el.addEventListener('scroll', markScrolling, { passive: true });
+    el.addEventListener('wheel', markScrolling, { passive: true });
+    el.addEventListener('touchmove', markScrolling, { passive: true });
+    el.addEventListener('keydown', (e) => {
       if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) markScrolling();
     });
   }
+  bindAutoHideScrollbar(document.getElementById('cardScroll'));
+  bindAutoHideScrollbar(document.getElementById('categoryList'));
 
   function syncColorPicker(value) {
     const hex = /^#[0-9a-fA-F]{6}$/.test(value) ? value : '';
