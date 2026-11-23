@@ -14,6 +14,8 @@
   --shadow-hover: 0 10px 28px rgba(22, 33, 55, 0.10);
   --radius: 14px;
   --sidebar-width: 232px;
+  --scroll-thumb: #c3ccda;
+  --scroll-thumb-hover: #a7b2c4;
 }
 
 * { box-sizing: border-box; }
@@ -352,6 +354,31 @@ button, input, textarea, select { font-family: inherit; }
   overscroll-behavior: contain;
   /* 预留卡片 hover 时的下移与 2px 红色描边（offset 2px）空间，避免描边被滚动区裁掉 */
   padding: 10px 10px 12px 8px;
+  /* 滚动条占位恒定，出现/隐藏时卡片区宽度不跳动 */
+  scrollbar-gutter: stable;
+}
+
+/* 滚动时显示、静止 1.2s 后自动隐藏（Chrome / Edge / Safari） */
+.card-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.card-scroll::-webkit-scrollbar-track { background: transparent; }
+.card-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  background-clip: padding-box;
+  border: 3px solid transparent;
+  border-radius: 6px;
+  transition: background-color .22s ease;
+}
+
+.card-scroll.is-scrolling::-webkit-scrollbar-thumb { background-color: var(--scroll-thumb); }
+.card-scroll.is-scrolling::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-hover); }
+
+/* Firefox 不支持伪元素滚动条，用 scrollbar-color 做等效淡出 */
+@supports (-moz-appearance: none) {
+  .card-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .card-scroll.is-scrolling { scrollbar-color: var(--scroll-thumb) transparent; }
 }
 
 .content-head {
@@ -1259,6 +1286,8 @@ button, input, textarea, select { font-family: inherit; }
   --danger: #ff7276;
   --shadow: 0 1px 2px rgba(0, 0, 0, .3);
   --shadow-hover: 0 10px 28px rgba(0, 0, 0, .45);
+  --scroll-thumb: #4a5464;
+  --scroll-thumb-hover: #5d6878;
 }
 
 [data-theme="dark"] .btn { background: #232a35; color: var(--text); }
