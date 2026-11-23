@@ -1,0 +1,1999 @@
+(() => {
+  'use strict';
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+  const PLATFORMS = [
+    { key: 'windows', label: 'Windows' },
+    { key: 'mac', label: 'Mac' },
+    { key: 'linux', label: 'Linux' },
+    { key: 'android', label: 'Android' },
+    { key: 'ios', label: 'iOS' },
+  ];
+
+  const LICENSES = ['free', 'subscription', 'onetime', 'metered', 'freemium'];
+
+  const I18N = {
+    'zh-CN': {
+      'header.subtitle': '专属于你的软件收藏',
+      'search.placeholder': '搜索软件名称或简介',
+      'search.heading': '搜索结果',
+      'btn.login': '登录',
+      'btn.settings': '设置',
+      'btn.logout': '退出登录',
+      'btn.addSoftware': '＋ 添加软件',
+      'sidebar.title': '软件分类',
+      'sidebar.all': '全部软件',
+      'sidebar.newCategory': '新分类名称',
+      'sidebar.add': '添加',
+      'sidebar.uncategorized': '未分类',
+      'sidebar.tip': '分类可自定义，点分类右侧的 × 可删除',
+      'filter.platform': '系统平台',
+      'filter.license': '授权方式',
+      'filter.allPlatform': '全部平台',
+      'filter.allLicense': '全部授权',
+      'license.free': '免费',
+      'license.subscription': '订阅制',
+      'license.onetime': '一次性买断',
+      'license.metered': '按量计费',
+      'license.freemium': '基础免费+增值收费',
+      'content.perRow': '每行显示',
+      'content.perPage': '每页显示',
+      'content.sort': '排序',
+      'content.moveTo': '移动至',
+      'bulk.enter': '多选',
+      'bulk.exit': '取消多选',
+      'bulk.delete': '删除',
+      'bulk.selected': '已选 {n} 个',
+      'bulk.selectHint': '点卡片可勾选，已选 {n} 个',
+      'bulk.moveTitle': '移动卡片',
+      'bulk.moveText': '把选中的 {n} 个卡片移动到「{cat}」？该分类下已有的卡片保持不变。',
+      'bulk.moveDone': '已把 {n} 个卡片移动到「{cat}」',
+      'bulk.deleteTitle': '删除卡片',
+      'bulk.deleteText': '确定删除选中的 {n} 个卡片吗？只删除「{cat}」分类下的卡片，卡片在其他分类下仍然保留。',
+      'bulk.deleteTextAll': '确定删除选中的 {n} 个卡片吗？这会删除这些卡片的所有分类，且无法恢复。',
+      'bulk.deleteDone': '已删除 {n} 个卡片',
+      'bulk.deleteDoneCat': '已从「{cat}」移除 {n} 个卡片',
+      'bulk.noTarget': '请先选择一个分类',
+      'bulk.noSelection': '请先勾选卡片',
+      'bulk.chooseCategory': '选择分类',
+      'confirm.ok': '删除',
+      'confirm.cancel': '取消',
+      'categoryDeleteTitle': '删除分类',
+      'categoryDeleteText': '确定删除分类「{name}」吗？分类下的卡片不会被删除。仍属于其他分类的卡片只从本分类移除；不再属于任何分类的卡片会归入「未分类」。',
+      'categoryDeleteTextOne': '「{name}」下有 {n} 张卡片。删除后这些卡片不会被删除，会归入「未分类」。确定删除这个分类吗？',
+      'count.total': '共 {n} 个软件',
+      'option.one': '1 个卡片',
+      'option.two': '2 个卡片',
+      'option.icon': '只显示图标',
+      'sort.default': '默认排序',
+      'sort.updated': '最新更新',
+      'sort.oldest': '最早上架',
+      'sort.name_asc': 'A-Z 正序',
+      'sort.name_desc': 'Z-A 倒序',
+      'pager.prev': '上一页',
+      'pager.next': '下一页',
+      'pager.jumpPrefix': '跳至',
+      'pager.jumpSuffix': '页',
+      'pager.go': 'GO',
+      'empty.title': '这里还没有软件',
+      'empty.all': '添加第一个软件卡片，开始整理你的软件库。',
+      'empty.category': '当前分类下暂无软件，可以添加一个。',
+      'empty.searchTitle': '没有找到结果',
+      'empty.search': '没有匹配的软件，换个关键字试试。',
+      'empty.add': '＋ 添加软件',
+      'card.edit': '编辑',
+      'card.pin': '置顶',
+      'card.unpin': '取消置顶',
+      'card.badgePin': '置顶',
+      'card.remove': '删除',
+      'card.website': '🌐 官方网站：',
+      'card.github': '🌐 GitHub 地址：',
+      'card.release': '📌 版本更新：',
+      'card.docs': '📖 官方文档：',
+      'card.support': '💻 支持系统：',
+      'card.license': '💰 授权方式：',
+      'card.download': '📥 下载地址：',
+      'card.viewRelease': '查看版本更新',
+      'card.viewDocs': '查看文档',
+      'card.noDownload': '暂未提供',
+      'modal.addTitle': '添加软件',
+      'modal.editTitle': '编辑软件',
+      'form.name': '软件名称',
+      'form.category': '所属分类',
+      'form.categoryHint': '（可多选，不选则为「未分类」）',
+      'form.categoryAll': '全选',
+      'form.categoryClear': '清空',
+      'form.desc': '软件简介',
+      'form.descriptionHint': '例如，这是一个免费开源软件，无广告',
+      'form.logo': '图标',
+      'form.logoUrl': '图标 URL，例如 https://.../logo.png',
+      'form.upload': '上传本地图片',
+      'form.clearLogo': '清除',
+      'form.home': '官网链接',
+      'form.github': 'GitHub 链接',
+      'form.release': '版本更新链接',
+      'form.doc': '文档链接',
+      'form.downloads': '下载地址',
+      'form.licenses': '授权方式',
+      'form.downloadEmpty': '暂无下载条目，点下方按钮添加',
+      'form.addDownload': '＋ 添加一条下载',
+      'form.dlText': '显示文字，如：Windows 版',
+      'form.dlLink': '下载链接，如：https://xxx.exe',
+      'form.rm': '移除',
+      'form.platforms': '支持系统',
+      'form.cardColor': '卡片背景色',
+      'form.cardColorHint': '#f5f6f8（留空为默认背景）',
+      'form.colorClear': '恢复默认',
+      'form.cancel': '取消',
+      'form.save': '保存',
+      'form.saving': '保存中…',
+      'form.errorName': '请填写软件名称',
+      'form.errorCategory': '请先创建并选择一个分类',
+      'form.noCategories': '还没有分类，保存后这张卡片会归到「未分类」',
+      'login.title': '登录',
+      'login.username': '用户名',
+      'login.password': '密码',
+      'login.remember': '记住密码',
+      'login.forgot': '忘记密码？',
+      'login.submit': '登录',
+      'login.submitting': '登录中…',
+      'login.usernamePlaceholder': '请输入用户名',
+      'login.passwordPlaceholder': '请输入密码',
+      'forgot.title': '忘记密码',
+      'forgot.body': '本站密码保存在服务器本地。请在服务器上执行下面的命令重置密码：',
+      'forgot.hint': '不填新密码时，默认重置为 admin123，重置后请尽快在「设置 → 账号安全」里修改。',
+      'forgot.close': '我知道了',
+      'settings.title': '设置',
+      'settings.siteSection': '站点设置',
+      'settings.siteName': '站点名称',
+      'settings.siteTitle': '网站标题',
+      'settings.siteTagline': '站点副标题',
+      'settings.siteTaglineHint': '专属于你的软件收藏',
+      'settings.siteIcon': '网站图标',
+      'settings.iconUpload': '上传图标',
+      'settings.theme': '外观主题',
+      'settings.themeLight': '浅色',
+      'settings.themeDark': '深色',
+      'settings.themeSystem': '跟随系统',
+      'settings.language': '语言',
+      'settings.account': '账号安全',
+      'settings.currentPwd': '当前密码',
+      'settings.newUsername': '新用户名',
+      'settings.newPwd': '新密码（留空则不修改）',
+      'settings.saveAccount': '保存账号设置',
+      'settings.backup': '备份与恢复',
+      'settings.backupHint': '备份包含数据库和上传的图标；恢复会覆盖当前全部数据，请先下载备份。',
+      'settings.download': '下载备份',
+      'settings.restore': '恢复备份',
+      'settings.save': '保存设置',
+      'settings.close': '关闭',
+      'toast.categoryAdded': '已添加分类「{name}」',
+      'toast.categoryDeleted': '分类已删除',
+      'toast.saved': '已保存修改',
+      'toast.added': '已添加软件',
+      'toast.deleted': '已删除',
+      'toast.uploading': '上传中…',
+      'toast.uploaded': '图标已上传',
+      'toast.loginSuccess': '登录成功',
+      'toast.logout': '已退出登录',
+      'toast.settingsSaved': '设置已保存',
+      'toast.accountSaved': '账号已更新',
+      'toast.pinned': '已置顶「{name}」',
+      'toast.categoryOrder': '分类顺序已更新',
+      'toast.unpinned': '已取消置顶「{name}」',
+      'toast.restoring': '正在恢复…',
+      'toast.restored': '备份已恢复，请重新登录',
+      'toast.needLogin': '请先登录',
+      'toast.iconBig': '图片不能超过 5MB',
+      'toast.pageRange': '请输入 1 到 {max} 之间的页码',
+      'delete.title': '删除卡片',
+      'delete.hint': '「{name}」属于 {n} 个分类：{cats}。请选择要执行的操作。',
+      'delete.hintOne': '「{name}」目前只属于「{cat}」，选择「只删除该分类下的卡片」等于删除这张卡片。',
+      'delete.hintNoCat': '「{name}」目前未归入任何分类（显示在「未分类」里），删除后这张卡片将从所有分类中移除。',
+      'delete.onlyThis': '只删除「{cat}」下的卡片',
+      'delete.all': '删除所有分类下的卡片',
+      'delete.cancel': '取消',
+      'toast.removedFrom': '已从「{cat}」移除该卡片',
+      'confirm.deleteSoftware': '确定删除「{name}」吗？',
+      'confirm.deleteCategory': '确定删除分类「{name}」吗？',
+      'confirm.deleteCategoryItems': '分类「{name}」下有 {count} 张卡片。删除后，同时属于其他分类的卡片只从本分类移除；只属于本分类的卡片会转到「未分类」。确定继续吗？',
+      'confirm.restore': '恢复备份会覆盖当前全部数据，确定继续吗？',
+    },
+    en: {
+      'header.subtitle': 'Organize your software collection by category',
+      'search.placeholder': 'Search name or description',
+      'search.heading': 'Search results',
+      'btn.login': 'Sign in',
+      'btn.settings': 'Settings',
+      'btn.logout': 'Sign out',
+      'btn.addSoftware': '＋ Add software',
+      'sidebar.title': 'Categories',
+      'sidebar.all': 'All software',
+      'sidebar.newCategory': 'New category',
+      'sidebar.add': 'Add',
+      'sidebar.uncategorized': 'Uncategorized',
+      'sidebar.tip': 'Categories are customizable. Click × to delete.',
+      'filter.platform': 'Platform',
+      'filter.license': 'License',
+      'filter.allPlatform': 'All platforms',
+      'filter.allLicense': 'All licenses',
+      'license.free': 'Free',
+      'license.subscription': 'Subscription',
+      'license.onetime': 'One-time purchase',
+      'license.metered': 'Usage-based',
+      'license.freemium': 'Freemium',
+      'content.perRow': 'Cards per row',
+      'content.perPage': 'Per page',
+      'content.sort': 'Sort',
+      'content.moveTo': 'Move to',
+      'bulk.enter': 'Select',
+      'bulk.exit': 'Cancel select',
+      'bulk.delete': 'Delete',
+      'bulk.selected': '{n} selected',
+      'bulk.selectHint': 'Click cards to select, {n} selected',
+      'bulk.moveTitle': 'Move cards',
+      'bulk.moveText': 'Move the {n} selected cards to “{cat}”? Cards already in that category are kept.',
+      'bulk.moveDone': 'Moved {n} cards to “{cat}”',
+      'bulk.deleteTitle': 'Delete cards',
+      'bulk.deleteText': 'Delete the {n} selected cards? Only the cards in “{cat}” are removed; cards in other categories are kept.',
+      'bulk.deleteTextAll': 'Delete the {n} selected cards? This removes them from every category and cannot be undone.',
+      'bulk.deleteDone': 'Deleted {n} cards',
+      'bulk.deleteDoneCat': 'Removed {n} cards from “{cat}”',
+      'bulk.noTarget': 'Choose a category first',
+      'bulk.noSelection': 'Select some cards first',
+      'bulk.chooseCategory': 'Choose category',
+      'confirm.ok': 'Delete',
+      'confirm.cancel': 'Cancel',
+      'categoryDeleteTitle': 'Delete category',
+      'categoryDeleteText': 'Delete category “{name}”? Cards in it are not deleted: cards that still belong to other categories are only removed here, the rest move to Uncategorized.',
+      'categoryDeleteTextOne': '“{name}” has {n} cards. They are not deleted — they move to Uncategorized. Delete this category?',
+      'count.total': '{n} items',
+      'option.one': '1 card',
+      'option.two': '2 cards',
+      'option.icon': 'Icons only',
+      'sort.default': 'Default',
+      'sort.updated': 'Recently updated',
+      'sort.oldest': 'Oldest first',
+      'sort.name_asc': 'Name A-Z',
+      'sort.name_desc': 'Name Z-A',
+      'pager.prev': 'Prev',
+      'pager.next': 'Next',
+      'pager.jumpPrefix': 'Go to',
+      'pager.jumpSuffix': 'page',
+      'pager.go': 'GO',
+      'empty.title': 'No software here yet',
+      'empty.all': 'Add the first card to start your library.',
+      'empty.category': 'No software in this category yet.',
+      'empty.searchTitle': 'No results found',
+      'empty.search': 'No matches. Try another keyword.',
+      'empty.add': '＋ Add software',
+      'card.edit': 'Edit',
+      'card.pin': 'Pin',
+      'card.unpin': 'Unpin',
+      'card.badgePin': 'Pinned',
+      'card.remove': 'Delete',
+      'card.website': '🌐 Website: ',
+      'card.github': '🌐 GitHub: ',
+      'card.release': '📌 Releases: ',
+      'card.docs': '📖 Docs: ',
+      'card.support': '💻 Platforms: ',
+      'card.license': '💰 License: ',
+      'card.download': '📥 Downloads: ',
+      'card.download': '📥 Downloads: ',
+      'card.viewRelease': 'View releases',
+      'card.viewDocs': 'View docs',
+      'card.noDownload': 'Not provided',
+      'modal.addTitle': 'Add software',
+      'modal.editTitle': 'Edit software',
+      'form.name': 'Name',
+      'form.category': 'Category',
+      'form.categoryHint': ' (multiple allowed, empty = Uncategorized)',
+      'form.categoryAll': 'All',
+      'form.categoryClear': 'Clear',
+      'form.desc': 'Description',
+      'form.descriptionHint': 'e.g. A free, open-source app with no ads',
+      'form.logo': 'Icon',
+      'form.logoUrl': 'Icon URL, e.g. https://.../logo.png',
+      'form.upload': 'Upload image',
+      'form.clearLogo': 'Clear',
+      'form.home': 'Website URL',
+      'form.github': 'GitHub URL',
+      'form.release': 'Release URL',
+      'form.doc': 'Docs URL',
+      'form.downloads': 'Downloads',
+      'form.licenses': 'License',
+      'form.downloadEmpty': 'No entries yet. Add one below.',
+      'form.addDownload': '＋ Add download',
+      'form.dlText': 'Label, e.g. Windows',
+      'form.dlLink': 'Link, e.g. https://...',
+      'form.rm': 'Remove',
+      'form.platforms': 'Platforms',
+      'form.cardColor': 'Card background',
+      'form.cardColorHint': '#f5f6f8 (blank = default)',
+      'form.colorClear': 'Reset',
+      'form.cancel': 'Cancel',
+      'form.save': 'Save',
+      'form.saving': 'Saving…',
+      'form.errorName': 'Please enter a name',
+      'form.errorCategory': 'Please create and select a category',
+      'form.noCategories': 'No categories yet — the card will be saved as Uncategorized',
+      'login.title': 'Sign in',
+      'login.username': 'Username',
+      'login.password': 'Password',
+      'login.remember': 'Remember password',
+      'login.forgot': 'Forgot password?',
+      'login.submit': 'Sign in',
+      'login.submitting': 'Signing in…',
+      'login.usernamePlaceholder': 'Enter username',
+      'login.passwordPlaceholder': 'Enter password',
+      'forgot.title': 'Forgot password',
+      'forgot.body': 'This site stores credentials locally. Reset the password on the server:',
+      'forgot.hint': 'Without a new password it resets to admin123. Change it in Settings → Account security.',
+      'forgot.close': 'Got it',
+      'settings.title': 'Settings',
+      'settings.siteSection': 'Site',
+      'settings.siteName': 'Site name',
+      'settings.siteTitle': 'Browser title',
+      'settings.siteTagline': 'Site tagline',
+      'settings.siteTaglineHint': 'Your personal software collection',
+      'settings.siteIcon': 'Site icon',
+      'settings.iconUpload': 'Upload icon',
+      'settings.theme': 'Theme',
+      'settings.themeLight': 'Light',
+      'settings.themeDark': 'Dark',
+      'settings.themeSystem': 'Follow system',
+      'settings.language': 'Language',
+      'settings.account': 'Account security',
+      'settings.currentPwd': 'Current password',
+      'settings.newUsername': 'New username',
+      'settings.newPwd': 'New password (leave blank to keep)',
+      'settings.saveAccount': 'Save account',
+      'settings.backup': 'Backup & restore',
+      'settings.backupHint': 'Backup includes the database and icons. Restoring overwrites all data, download a backup first.',
+      'settings.download': 'Download backup',
+      'settings.restore': 'Restore backup',
+      'settings.save': 'Save settings',
+      'settings.close': 'Close',
+      'toast.categoryAdded': 'Category “{name}” added',
+      'toast.categoryDeleted': 'Category deleted',
+      'toast.saved': 'Changes saved',
+      'toast.added': 'Software added',
+      'toast.deleted': 'Deleted',
+      'toast.uploading': 'Uploading…',
+      'toast.uploaded': 'Icon uploaded',
+      'toast.loginSuccess': 'Signed in',
+      'toast.logout': 'Signed out',
+      'toast.settingsSaved': 'Settings saved',
+      'toast.accountSaved': 'Account updated',
+      'toast.pinned': 'Pinned “{name}”',
+      'toast.categoryOrder': 'Category order updated',
+      'toast.unpinned': 'Unpinned “{name}”',
+      'toast.restoring': 'Restoring…',
+      'toast.restored': 'Restored. Please sign in again.',
+      'toast.needLogin': 'Please sign in first',
+      'toast.iconBig': 'Image must be under 5MB',
+      'toast.pageRange': 'Enter a page between 1 and {max}',
+      'delete.title': 'Delete card',
+      'delete.hint': '“{name}” belongs to {n} categories: {cats}. Choose an action.',
+      'delete.hintOne': '“{name}” only belongs to “{cat}”, so removing that card deletes it.',
+      'delete.hintNoCat': '“{name}” is not in any category (shown as Uncategorized). Deleting removes this card everywhere.',
+      'delete.onlyThis': 'Delete only the “{cat}” card',
+      'delete.all': 'Delete all cards of this software',
+      'delete.cancel': 'Cancel',
+      'toast.removedFrom': 'Removed from “{cat}”',
+      'confirm.deleteSoftware': 'Delete “{name}”?',
+      'confirm.deleteCategory': 'Delete category “{name}”?',
+      'confirm.deleteCategoryItems': 'Category “{name}” has {count} cards. Cards that also belong to other categories are only removed here; the rest move to Uncategorized. Continue?',
+      'confirm.restore': 'Restoring overwrites all current data. Continue?',
+    },
+  };
+
+  const PAGE_SIZES = [10, 20, 30, 50, 100];
+  const COLS_OPTIONS = ['1', '2', 'icon'];
+
+  function normalizePageSize(value) {
+    const num = Number(value);
+    return PAGE_SIZES.indexOf(num) >= 0 ? num : 20;
+  }
+
+  function normalizeCols(value) {
+    const raw = String(value == null ? '' : value);
+    if (raw === 'icon') return 'icon';
+    return raw === '1' ? 1 : 2;
+  }
+
+  const state = {
+    categories: [],
+    categoryTotal: 0,
+    uncategorizedCount: 0,
+    activeCategory: 'all',
+    q: '',
+    platform: '',
+    license: '',
+    sort: localStorage.getItem('hub.sort') || 'default',
+    page: 1,
+    pageSize: normalizePageSize(localStorage.getItem('hub.pageSize')),
+    cols: normalizeCols(localStorage.getItem('hub.cols')),
+    items: [],
+    total: 0,
+    pages: 1,
+    editingId: null,
+    focused: null,
+    selectMode: false,
+    selected: new Set(),
+    modalDownloads: [],
+    modalLogo: '',
+    modalCardColor: '',
+    user: '',
+    settings: {
+      site_name: '软件库',
+      site_title: '软件库',
+      site_tagline: '',
+      site_icon: '/static/favicon.svg',
+      theme: 'light',
+      language: 'zh-CN',
+    },
+    lang: 'zh-CN',
+    siteIconDraft: '',
+  };
+
+  const els = {
+    categoryList: $('#categoryList'),
+    allCount: $('#allCount'),
+    currentCategory: $('#currentCategory'),
+    countInfo: $('#countInfo'),
+    cardGrid: $('#cardGrid'),
+    pager: $('#pager'),
+    pageNumbers: $('#pageNumbers'),
+    prevPage: $('#prevPage'),
+    nextPage: $('#nextPage'),
+    jumpInput: $('#jumpInput'),
+    pageSizeSelect: $('#pageSizeSelect'),
+    colsSelect: $('#colsSelect'),
+    sortSelect: $('#sortSelect'),
+    searchInput: $('#searchInput'),
+    searchClear: $('#searchClear'),
+    modal: $('#softwareModal'),
+    modalTitle: $('#modalTitle'),
+    form: $('#softwareForm'),
+    formCategories: $('#formCategories'),
+    formError: $('#formError'),
+    logoPreview: $('#logoPreview'),
+    logoUrl: $('#logoUrl'),
+    logoFile: $('#logoFile'),
+    downloadRows: $('#downloadRows'),
+    toast: $('#toast'),
+    btnLogin: $('#btnLogin'),
+    btnSettings: $('#btnSettings'),
+    btnAddSoftware: $('#btnAddSoftware'),
+    btnLogoutTop: $('#btnLogoutTop'),
+    userName: $('#userName'),
+    cardColorText: $('#cardColorText'),
+    cardColorPicker: $('#cardColorPicker'),
+    platformFilter: $('#platformFilter'),
+    licenseFilter: $('#licenseFilter'),
+    categoryForm: $('#categoryForm'),
+    sidebarTip: $('#sidebarTip'),
+    loginModal: $('#loginModal'),
+    loginForm: $('#loginForm'),
+    loginError: $('#loginError'),
+    settingsModal: $('#settingsModal'),
+    siteName: $('#siteName'),
+    siteTagline: $('#siteTagline'),
+    brandMark: $('#brandMark'),
+    deleteModal: $('#deleteModal'),
+    deleteHint: $('#deleteHint'),
+    deleteOne: $('#deleteOne'),
+    bulkTools: $('#bulkTools'),
+    bulkMoveSelect: $('#bulkMoveSelect'),
+    bulkDelete: $('#bulkDelete'),
+    btnSelectMode: $('#btnSelectMode'),
+    confirmModal: $('#confirmModal'),
+    confirmTitle: $('#confirmTitle'),
+    confirmText: $('#confirmText'),
+    confirmOk: $('#confirmOk'),
+  };
+
+  // ---------------- 基础工具 ----------------
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function safeHref(url) {
+    const trimmed = String(url || '').trim();
+    if (trimmed.startsWith('//')) return '';
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) return trimmed;
+    return '';
+  }
+
+  // 支持基础的 Markdown（加粗 / 斜体 / 删除线 / 行内代码 / 链接 / 列表 / 小标题 / 换行）
+  // 先整体转义，再按白名单重建标签，避免注入。
+  function renderMarkdown(value) {
+    let text = String(value == null ? '' : value).replace(/\r\n?/g, '\n').trim();
+    if (!text) return '';
+    const escaped = escapeHtml(text);
+
+    const codes = [];
+    let src = escaped.replace(/`([^`\n]+)`/g, (m, code) => {
+      codes.push(`<code>${code}</code>`);
+      return `\u0001${codes.length - 1}\u0002`;
+    });
+
+    const inline = (s) => s
+      .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+      .replace(/~~([^~\n]+)~~/g, '<del>$1</del>');
+
+    const restoreCodes = (s) => s.replace(/\u0001(\d+)\u0002/g, (m, i) => codes[Number(i)] || '');
+
+    const out = [];
+    let list = [];
+    const flushList = () => {
+      if (list.length) {
+        out.push(`<ul>${list.join('')}</ul>`);
+        list = [];
+      }
+    };
+    src.split('\n').forEach((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        flushList();
+        return;
+      }
+      const li = trimmed.match(/^[-*+]\s+(.*)$/);
+      if (li) {
+        list.push(`<li>${inline(li[1])}</li>`);
+        return;
+      }
+      flushList();
+      const head = trimmed.match(/^(#{1,3})\s+(.*)$/);
+      if (head) {
+        const level = head[1].length + 2;
+        out.push(`<h${level}>${inline(head[2])}</h${level}>`);
+        return;
+      }
+      out.push(`<p>${inline(trimmed)}</p>`);
+    });
+    flushList();
+    return restoreCodes(out.join(''));
+  }
+
+  function t(key, vars) {
+    const dict = I18N[state.lang] || I18N['zh-CN'];
+    let text = dict[key] != null ? dict[key] : (I18N['zh-CN'][key] != null ? I18N['zh-CN'][key] : key);
+    if (vars) {
+      Object.keys(vars).forEach((k) => {
+        text = text.split('{' + k + '}').join(String(vars[k]));
+      });
+    }
+    return text;
+  }
+
+  let toastTimer = null;
+  function toast(message, isError = false) {
+    els.toast.textContent = message;
+    els.toast.classList.toggle('error', isError);
+    els.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2600);
+  }
+
+  async function api(url, options = {}) {
+    const res = await fetch(url, {
+      credentials: 'same-origin',
+      headers: options.body && !(options.body instanceof Blob) ? { 'Content-Type': 'application/json' } : {},
+      ...options,
+    });
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (err) {
+      data = null;
+    }
+    if (!res.ok) {
+      const error = new Error((data && data.error) || `请求失败（${res.status}）`);
+      error.status = res.status;
+      throw error;
+    }
+    return data;
+  }
+
+  // ---------------- 语言 / 主题 / 站点 ----------------
+  function applyI18n() {
+    document.documentElement.lang = state.lang;
+    $$('[data-i18n]').forEach((node) => {
+      node.textContent = t(node.dataset.i18n);
+    });
+    $$('[data-i18n-ph]').forEach((node) => {
+      node.placeholder = t(node.dataset.i18nPh);
+    });
+  }
+
+  let systemThemeQuery = null;
+  const THEME_KEY = 'hub.theme';
+
+  function preferredTheme() {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+    return (state.settings && state.settings.theme) || 'light';
+  }
+
+  function resolveTheme(theme) {
+    if (theme === 'system') {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return theme === 'dark' ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme) {
+    const chosen = theme || preferredTheme();
+    document.documentElement.dataset.theme = resolveTheme(chosen);
+    const toggle = document.getElementById('themeToggle');
+    if (toggle) {
+      toggle.querySelectorAll('[data-theme-value]').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.themeValue === chosen);
+      });
+    }
+    if (!systemThemeQuery && window.matchMedia) {
+      systemThemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      systemThemeQuery.addEventListener('change', () => {
+        if (preferredTheme() === 'system') applyTheme('system');
+      });
+    }
+  }
+
+  function applySite(settings) {
+    state.settings = settings;
+    state.lang = settings.language === 'en' ? 'en' : 'zh-CN';
+    const name = settings.site_name || '软件库';
+    els.siteName.textContent = name;
+    els.brandMark.textContent = name.slice(0, 1) || '软';
+    document.title = settings.site_title || name;
+    const iconHref = safeHref(settings.site_icon) || '/static/favicon.svg';
+    let icon = document.querySelector('link[rel="icon"]');
+    if (!icon) {
+      icon = document.createElement('link');
+      icon.rel = 'icon';
+      document.head.appendChild(icon);
+    }
+    icon.href = iconHref;
+    applyTheme();
+    applyI18n();
+    els.siteTagline.textContent = settings.site_tagline || t('header.subtitle');
+  }
+
+  async function loadSettings() {
+    const settings = await api('/api/settings');
+    applySite(settings);
+    $('#settingSiteName').value = settings.site_name || '';
+    $('#settingSiteTitle').value = settings.site_title || '';
+    $('#settingSiteTagline').value = settings.site_tagline || t('header.subtitle');
+    $('#settingSiteIcon').value = settings.site_icon || '';
+    $('#settingLanguage').value = settings.language === 'en' ? 'en' : 'zh-CN';
+    state.siteIconDraft = settings.site_icon || '';
+    updateSiteIconPreview();
+  }
+
+  // ---------------- 登录状态 ----------------
+  async function loadAuth() {
+    const data = await api('/api/auth/me');
+    state.user = data.logged_in ? data.username : '';
+    renderAuthUI();
+  }
+
+  function renderAuthUI() {
+    const loggedIn = !!state.user;
+    els.btnLogin.hidden = loggedIn;
+    els.btnAddSoftware.hidden = !loggedIn;
+    els.btnSettings.hidden = !loggedIn;
+    els.btnLogoutTop.hidden = !loggedIn;
+    els.userName.hidden = !loggedIn;
+    els.userName.textContent = loggedIn ? state.user : '';
+    els.categoryForm.hidden = !loggedIn;
+    els.sidebarTip.hidden = !loggedIn;
+    updateBulkUI();
+  }
+
+  function openLogin() {
+    els.loginError.textContent = '';
+    const saved = loadRemembered();
+    $('#loginUser').value = saved ? saved.username : '';
+    $('#loginPass').value = saved ? saved.password : '';
+    $('#rememberPass').checked = !!saved;
+    els.loginModal.hidden = false;
+    setTimeout(() => (saved ? $('#loginPass') : $('#loginUser')).focus(), 50);
+  }
+
+  async function submitLogin(event) {
+    event.preventDefault();
+    const username = $('#loginUser').value.trim();
+    const password = $('#loginPass').value;
+    if (!username || !password) {
+      els.loginError.textContent = t('login.usernamePlaceholder');
+      return;
+    }
+    const btn = $('#loginSubmit');
+    btn.disabled = true;
+    btn.textContent = t('login.submitting');
+    try {
+      await api('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password, remember: $('#rememberPass').checked }),
+      });
+      if ($('#rememberPass').checked) {
+        saveRemembered(username, password);
+      } else {
+        clearRemembered();
+      }
+      els.loginModal.hidden = true;
+      await loadAuth();
+      renderCategories();
+      renderCards();
+      toast(t('toast.loginSuccess'));
+    } catch (err) {
+      els.loginError.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = t('login.submit');
+    }
+  }
+
+  function openSettings() {
+    if (!state.user) return;
+    $('#settingsError').textContent = '';
+    $('#accountError').textContent = '';
+    $('#backupError').textContent = '';
+    $('#accCurrent').value = '';
+    $('#accUsername').value = state.user;
+    $('#accNewPass').value = '';
+    els.settingsModal.hidden = false;
+  }
+
+  async function saveSettings() {
+    const payload = {
+      site_name: $('#settingSiteName').value.trim(),
+      site_title: $('#settingSiteTitle').value.trim(),
+      site_tagline: $('#settingSiteTagline').value.trim(),
+      site_icon: $('#settingSiteIcon').value.trim(),
+      language: $('#settingLanguage').value,
+    };
+    if (!payload.site_name) {
+      $('#settingsError').textContent = t('settings.siteName');
+      return;
+    }
+    const btn = $('#saveSettings');
+    btn.disabled = true;
+    try {
+      const saved = await api('/api/settings', { method: 'PUT', body: JSON.stringify(payload) });
+      applySite(saved);
+      renderCategories();
+      await loadSoftware();
+      state.siteIconDraft = saved.site_icon || '';
+      updateSiteIconPreview();
+      toast(t('toast.settingsSaved'));
+    } catch (err) {
+      $('#settingsError').textContent = err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function saveAccount() {
+    const current = $('#accCurrent').value;
+    const username = $('#accUsername').value.trim();
+    const newPassword = $('#accNewPass').value;
+    $('#accountError').textContent = '';
+    if (!current) {
+      $('#accountError').textContent = t('settings.currentPwd');
+      return;
+    }
+    const btn = $('#saveAccount');
+    btn.disabled = true;
+    try {
+      const data = await api('/api/auth/account', {
+        method: 'PUT',
+        body: JSON.stringify({ current_password: current, username, new_password: newPassword }),
+      });
+      state.user = data.username;
+      $('#accUsername').value = data.username;
+      $('#accCurrent').value = '';
+      $('#accNewPass').value = '';
+      toast(t('toast.accountSaved'));
+    } catch (err) {
+      $('#accountError').textContent = err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function logout() {
+    try {
+      await api('/api/auth/logout', { method: 'POST' });
+    } catch (err) {
+      // 忽略退出接口错误
+    }
+    state.user = '';
+    renderAuthUI();
+    renderCategories();
+    renderCards();
+    els.settingsModal.hidden = true;
+    toast(t('toast.logout'));
+  }
+
+  // 记住密码（仅存本机浏览器）
+  function encodeStr(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  function decodeStr(str) {
+    try {
+      return decodeURIComponent(escape(atob(str)));
+    } catch (err) {
+      return '';
+    }
+  }
+  function saveRemembered(username, password) {
+    localStorage.setItem('hub.remember', JSON.stringify({ u: encodeStr(username), p: encodeStr(password) }));
+  }
+  function loadRemembered() {
+    try {
+      const raw = localStorage.getItem('hub.remember');
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      const username = decodeStr(data.u || '');
+      const password = decodeStr(data.p || '');
+      return username ? { username, password } : null;
+    } catch (err) {
+      return null;
+    }
+  }
+  function clearRemembered() {
+    localStorage.removeItem('hub.remember');
+  }
+
+  // ---------------- 分类 ----------------
+  function renderCategories() {
+    const total = state.categoryTotal;
+    els.allCount.textContent = t('count.total', { n: total });
+
+    let html = `
+      <div class="cat-item ${state.activeCategory === 'all' ? 'active' : ''}" data-id="all">
+        <span class="cat-name">${t('sidebar.all')}</span>
+        <span class="cat-del ghost" aria-hidden="true"></span>
+        <span class="cat-count">${total}</span>
+      </div>`;
+
+    for (const cat of state.categories) {
+      const active = String(state.activeCategory) === String(cat.id);
+      html += `
+        <div class="cat-item ${active ? 'active' : ''}" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" draggable="${state.user ? 'true' : 'false'}">
+          <span class="cat-name" title="${escapeHtml(cat.name)}">${escapeHtml(cat.name)}</span>
+          ${state.user ? `<button class="cat-del" data-del="${cat.id}">×</button>` : '<span class="cat-del ghost"></span>'}
+          <span class="cat-count">${cat.count || 0}</span>
+        </div>`;
+    }
+
+    html += `
+      <div class="cat-item ${state.activeCategory === 'uncategorized' ? 'active' : ''}" data-id="uncategorized">
+        <span class="cat-name">${t('sidebar.uncategorized')}</span>
+        <span class="cat-del ghost" aria-hidden="true"></span>
+        <span class="cat-count">${state.uncategorizedCount}</span>
+      </div>`;
+
+    els.categoryList.innerHTML = html;
+    refreshFormCategories();
+  }
+
+  async function loadCategories() {
+    const data = await api('/api/categories');
+    state.categories = data.items || [];
+    state.categoryTotal = data.total || 0;
+    state.uncategorizedCount = data.uncategorized || 0;
+    renderCategories();
+  }
+
+  async function addCategory(name) {
+    const item = await api('/api/categories', { method: 'POST', body: JSON.stringify({ name }) });
+    await loadCategories();
+    toast(t('toast.categoryAdded', { name: item.name }));
+  }
+
+  function removeCategory(id, name, count) {
+    askConfirm({
+      title: t('categoryDeleteTitle'),
+      text: count > 0
+        ? t('categoryDeleteTextOne', { name, n: count })
+        : t('categoryDeleteText', { name }),
+      okText: t('confirm.ok'),
+      onOk: async () => {
+        await api(`/api/categories/${id}`, { method: 'DELETE' });
+        if (String(state.activeCategory) === String(id)) {
+          state.activeCategory = 'all';
+          state.page = 1;
+        }
+        await loadCategories();
+        await loadSoftware();
+        toast(t('toast.categoryDeleted'));
+      },
+    });
+  }
+
+  // ---------------- 软件卡片 ----------------
+  function logoHtml(item) {
+    const logo = safeHref(item.logo);
+    const letter = escapeHtml((item.name || '?').slice(0, 1));
+    if (logo) {
+      return `<img src="${escapeHtml(logo)}" alt="${escapeHtml(item.name)}" loading="lazy"
+        onerror="this.style.display='none';this.parentNode.querySelector('.logo-fallback').style.display='grid';">
+        <div class="logo-fallback" style="display:none;">${letter}</div>`;
+    }
+    return `<div class="logo-fallback">${letter}</div>`;
+  }
+
+  function linkRow(labelKey, url, textKey) {
+    const href = safeHref(url);
+    if (!href) return '';
+    return `
+      <div class="card-line">
+        <span class="label">${escapeHtml(t(labelKey))}</span>
+        <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(textKey ? t(textKey) : href)}</a>
+      </div>`;
+  }
+
+  function platformsLine(platforms) {
+    const map = platforms || {};
+    const checked = PLATFORMS.filter((p) => map[p.key]);
+    if (!checked.length) return '';
+    const parts = checked.map((p) => `<span>☑️ ${p.label}</span>`);
+    return `
+      <div class="card-line">
+        <span class="label">${escapeHtml(t('card.support'))}</span>
+        ${parts.join('<span class="card-sep">|</span>')}
+      </div>`;
+  }
+
+  function licenseLine(licenses) {
+    const list = (licenses || []).filter((k) => LICENSES.includes(k));
+    if (!list.length) return '';
+    const parts = list.map((k) => `<span>${escapeHtml(t('license.' + k))}</span>`);
+    return `
+      <div class="card-line">
+        <span class="label">${escapeHtml(t('card.license'))}</span>
+        ${parts.join('<span class="card-sep">|</span>')}
+      </div>`;
+  }
+
+  function downloadsLine(downloads) {
+    const list = (downloads || []).filter((d) => d && d.text && safeHref(d.link));
+    const body = list.length
+      ? list
+          .map((d) => `<a href="${escapeHtml(safeHref(d.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml(d.text)}</a>`)
+          .join('<span class="card-sep">|</span>')
+      : `<span class="no-download">${escapeHtml(t('card.noDownload'))}</span>`;
+    return `
+      <div class="card-line card-downloads">
+        <span class="label">${escapeHtml(t('card.download'))}</span>
+        ${body}
+      </div>`;
+  }
+
+  function contrastText(color) {
+    const hex = String(color || '').replace('#', '');
+    let r; let g; let b;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6) {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    } else {
+      return '';
+    }
+    if ([r, g, b].some((v) => Number.isNaN(v))) return '';
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance < 0.55 ? '#ffffff' : '#1f2329';
+  }
+
+  function cardActionsHtml(item, compact) {
+    if (!state.user) return '';
+    const ico = (emoji) => `<span class="btn-ico">${emoji}</span>`;
+    const txt = (text) => (compact ? '' : `<span class="btn-txt">${escapeHtml(text)}</span>`);
+    const pinLabel = item.pinned ? t('card.unpin') : t('card.pin');
+    return `<div class="card-actions">
+        <button class="mini-btn pin ${item.pinned ? 'active' : ''}" data-pin="${item.id}" title="${escapeHtml(pinLabel)}">${ico('📌')}${txt(pinLabel)}</button>
+        <button class="mini-btn" data-edit="${item.id}" title="${escapeHtml(t('card.edit'))}">${ico('✏️')}${txt(t('card.edit'))}</button>
+        <button class="mini-btn danger" data-remove="${item.id}" title="${escapeHtml(t('card.remove'))}">${ico('❌')}${txt(t('card.remove'))}</button>
+      </div>`;
+  }
+
+  function cardHtml(item) {
+    const color = /^#[0-9a-fA-F]{3,8}$/.test(item.card_color || '') ? item.card_color : '';
+    const style = color ? ` style="background-color:${color};color:${contrastText(color)};"` : '';
+    const classes = ['card'];
+    if (color) classes.push('card-custom');
+    if (item.pinned) classes.push('is-pinned');
+    if (state.selectMode && state.selected.has(String(item.id))) classes.push('selected');
+    const check = state.selectMode
+      ? `<span class="card-check"><input type="checkbox" data-sel="${item.id}" ${state.selected.has(String(item.id)) ? 'checked' : ''} aria-label="select"></span>`
+      : '';
+    if (state.cols === 'icon' && !state.focused) {
+      classes.push('card-compact');
+      return `
+      <article class="${classes.join(' ')}" data-id="${item.id}"${style}>
+        ${check}
+        ${cardActionsHtml(item, true)}
+        ${item.pinned ? `<span class="pin-flag" title="${escapeHtml(t('card.badgePin'))}">📌</span>` : ''}
+        <div class="card-logo">${logoHtml(item)}</div>
+        <h3 class="card-title">${escapeHtml(item.name)}</h3>
+      </article>`;
+    }
+    return `
+      <article class="${classes.join(' ')}" data-id="${item.id}"${style}>
+        ${check}
+        ${cardActionsHtml(item, false)}
+        ${item.pinned ? `<span class="pin-flag" title="${escapeHtml(t('card.badgePin'))}">📌</span>` : ''}
+        <div class="card-logo">${logoHtml(item)}</div>
+        <div class="card-main">
+          <div>
+            <div class="card-title-row">
+              <h3 class="card-title">${escapeHtml(item.name)}</h3>
+              ${(item.category_names || []).length && state.activeCategory === 'all'
+                ? `<span class="card-cats">${(item.category_names || []).map((n) => `<span class="cat-tag">${escapeHtml(n)}</span>`).join('')}</span>`
+                : ''}
+            </div>
+            ${item.description ? `<div class="card-desc">${renderMarkdown(item.description)}</div>` : ''}
+          </div>
+          <div class="card-links">
+            ${linkRow('card.website', item.url_home)}
+            ${linkRow('card.github', item.url_github)}
+            ${linkRow('card.release', item.url_release, 'card.viewRelease')}
+            ${linkRow('card.docs', item.url_doc, 'card.viewDocs')}
+          </div>
+          ${platformsLine(item.platforms)}
+          ${licenseLine(item.licenses)}
+          ${downloadsLine(item.downloads)}
+        </div>
+      </article>`;
+  }
+
+  function renderCards() {
+    if (!state.items.length) {
+      const searching = !!state.q;
+      els.cardGrid.innerHTML = `
+        <div class="empty-state">
+          <div class="big">${escapeHtml(searching ? t('empty.searchTitle') : t('empty.title'))}</div>
+          <div>${escapeHtml(searching ? t('empty.search') : (state.activeCategory === 'all' ? t('empty.all') : t('empty.category')))}</div>
+          ${state.user ? `<button class="btn btn-primary" id="emptyAdd">${escapeHtml(t('empty.add'))}</button>` : ''}
+        </div>`;
+      const emptyAdd = $('#emptyAdd');
+      if (emptyAdd) emptyAdd.addEventListener('click', () => openModal());
+      return;
+    }
+    els.cardGrid.innerHTML = state.items.map(cardHtml).join('');
+  }
+
+  // ---------------- 多选批量操作 ----------------
+  function updateBulkUI() {
+    const loggedIn = !!state.user;
+    els.btnSelectMode.hidden = !loggedIn;
+    if (!loggedIn && state.selectMode) {
+      state.selectMode = false;
+      state.selected.clear();
+    }
+    if (!state.selectMode) {
+      els.bulkTools.hidden = true;
+      els.btnSelectMode.textContent = t('bulk.enter');
+      els.btnSelectMode.classList.remove('active');
+      return;
+    }
+    const keep = els.bulkMoveSelect.value;
+    const options = state.categories
+      .map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`)
+      .join('');
+    els.bulkMoveSelect.innerHTML = `<option value="">${escapeHtml(t('bulk.chooseCategory'))}</option>${options}`;
+    if (keep) els.bulkMoveSelect.value = keep;
+    els.btnSelectMode.textContent = t('bulk.exit');
+    els.btnSelectMode.classList.add('active');
+    els.bulkTools.hidden = false;
+    const n = state.selected.size;
+    els.bulkDelete.disabled = n === 0;
+    els.bulkMoveSelect.disabled = n === 0 || !state.categories.length;
+  }
+
+  function enterSelectMode(on) {
+    state.selectMode = !!on;
+    if (!on) state.selected.clear();
+    updateBulkUI();
+    renderCards();
+  }
+
+  function toggleSelect(id) {
+    const key = String(id);
+    if (state.selected.has(key)) state.selected.delete(key);
+    else state.selected.add(key);
+    const card = els.cardGrid.querySelector(`.card[data-id="${key}"]`);
+    if (card) {
+      card.classList.toggle('selected', state.selected.has(key));
+      const box = card.querySelector('[data-sel]');
+      if (box) box.checked = state.selected.has(key);
+    }
+    updateBulkUI();
+  }
+
+  function selectedIds() {
+    return Array.from(state.selected);
+  }
+
+  function bulkFromCategory() {
+    return (state.activeCategory === 'all' || state.activeCategory === 'uncategorized')
+      ? ''
+      : String(state.activeCategory);
+  }
+
+  async function bulkMove() {
+    const ids = selectedIds();
+    if (!ids.length) {
+      toast(t('bulk.noSelection'), true);
+      return;
+    }
+    const to = els.bulkMoveSelect.value;
+    if (!to) {
+      toast(t('bulk.noTarget'), true);
+      return;
+    }
+    const cat = state.categories.find((c) => String(c.id) === String(to));
+    askConfirm({
+      title: t('bulk.moveTitle'),
+      text: t('bulk.moveText', { n: ids.length, cat: cat ? cat.name : '' }),
+      okText: t('content.moveTo'),
+      tone: 'primary',
+      onOk: async () => {
+        await api('/api/software/bulk_move', {
+          method: 'POST',
+          body: JSON.stringify({
+            ids: ids.map(Number),
+            to_category_id: Number(to),
+            from_category_id: bulkFromCategory() || null,
+          }),
+        });
+        state.selected.clear();
+        els.bulkMoveSelect.value = '';
+        await refreshAll();
+        toast(t('bulk.moveDone', { n: ids.length, cat: cat ? cat.name : '' }));
+      },
+    });
+  }
+
+  async function bulkRemove() {
+    const ids = selectedIds();
+    if (!ids.length) {
+      toast(t('bulk.noSelection'), true);
+      return;
+    }
+    const cat = currentViewCategory();
+    askConfirm({
+      title: t('bulk.deleteTitle'),
+      text: cat
+        ? t('bulk.deleteText', { n: ids.length, cat: cat.name })
+        : t('bulk.deleteTextAll', { n: ids.length }),
+      okText: t('confirm.ok'),
+      onOk: async () => {
+        await api('/api/software/bulk_delete', {
+          method: 'POST',
+          body: JSON.stringify({ ids: ids.map(Number), category_id: cat ? cat.id : null }),
+        });
+        state.selected.clear();
+        await refreshAll();
+        toast(cat
+          ? t('bulk.deleteDoneCat', { n: ids.length, cat: cat.name })
+          : t('bulk.deleteDone', { n: ids.length }));
+      },
+    });
+  }
+
+  // ---------------- 通用确认弹窗 ----------------
+  let confirmHandler = null;
+
+  function askConfirm(options) {
+    confirmHandler = options && options.onOk ? options.onOk : null;
+    els.confirmTitle.textContent = (options && options.title) || t('confirm.ok');
+    els.confirmText.textContent = (options && options.text) || '';
+    els.confirmOk.textContent = (options && options.okText) || t('confirm.ok');
+    els.confirmOk.classList.toggle('btn-danger', !options || options.tone !== 'primary');
+    els.confirmOk.classList.toggle('btn-primary', !!options && options.tone === 'primary');
+    els.confirmOk.disabled = false;
+    els.confirmModal.hidden = false;
+  }
+
+  function closeConfirm() {
+    els.confirmModal.hidden = true;
+    confirmHandler = null;
+  }
+
+  async function runConfirm() {
+    if (!confirmHandler) {
+      closeConfirm();
+      return;
+    }
+    const fn = confirmHandler;
+    els.confirmOk.disabled = true;
+    try {
+      await fn();
+      els.confirmOk.disabled = false;
+      closeConfirm();
+    } catch (err) {
+      els.confirmOk.disabled = false;
+      toast(err.message, true);
+    }
+  }
+
+  function renderPager() {
+    const pages = state.pages;
+    els.pager.style.display = pages <= 1 ? 'none' : 'flex';
+    if (pages <= 1) return;
+
+    els.prevPage.disabled = state.page <= 1;
+    els.nextPage.disabled = state.page >= pages;
+    els.jumpInput.max = String(pages);
+    els.jumpInput.value = String(state.page);
+
+    const numbers = [];
+    if (pages <= 7) {
+      for (let i = 1; i <= pages; i++) numbers.push(i);
+    } else if (state.page <= 4) {
+      for (let i = 1; i <= 5; i++) numbers.push(i);
+      numbers.push('...', pages);
+    } else if (state.page >= pages - 3) {
+      numbers.push(1, '...');
+      for (let i = pages - 4; i <= pages; i++) numbers.push(i);
+    } else {
+      numbers.push(1, '...', state.page - 1, state.page, state.page + 1, '...', pages);
+    }
+
+    els.pageNumbers.innerHTML = numbers
+      .map((n) => (n === '...'
+        ? '<span class="page-num ellipsis">…</span>'
+        : `<button class="page-num ${n === state.page ? 'active' : ''}" data-page="${n}">${n}</button>`))
+      .join('');
+  }
+
+  async function loadSoftware() {
+    const params = new URLSearchParams({
+      page: String(state.page),
+      page_size: String(state.pageSize),
+      category_id: state.q ? 'all' : String(state.activeCategory),
+      sort: state.sort,
+    });
+    if (state.q) params.set('q', state.q);
+    if (state.platform) params.set('platform', state.platform);
+    if (state.license) params.set('license', state.license);
+    const data = await api(`/api/software?${params.toString()}`);
+    state.items = data.items || [];
+    state.total = data.total || 0;
+    state.pages = data.pages || 1;
+    if (data.page && data.page !== state.page) state.page = data.page;
+    Array.from(state.selected).forEach((id) => {
+      if (!state.items.some((i) => String(i.id) === id)) state.selected.delete(id);
+    });
+
+    const cat = state.categories.find((c) => String(c.id) === String(state.activeCategory));
+    let title;
+    if (state.q) title = t('search.heading');
+    else if (state.activeCategory === 'all') title = t('sidebar.all');
+    else if (state.activeCategory === 'uncategorized') title = t('sidebar.uncategorized');
+    else title = cat ? cat.name : t('sidebar.all');
+    els.currentCategory.textContent = title;
+    els.countInfo.textContent = state.q
+      ? `${state.q} · ${t('count.total', { n: state.total })}`
+      : t('count.total', { n: state.total });
+
+    renderCards();
+    renderPager();
+    updateBulkUI();
+  }
+
+  async function refreshAll() {
+    await loadCategories();
+    await loadSoftware();
+  }
+
+  // ---------------- 弹窗表单 ----------------
+  function refreshFormCategories() {
+    if (!state.categories.length) {
+      els.formCategories.innerHTML = `<span class="hint-text">${escapeHtml(t('form.noCategories'))}</span>`;
+      return;
+    }
+    els.formCategories.innerHTML = state.categories
+      .map((c) => `<label class="cat-chip"><input type="checkbox" name="cats" value="${c.id}"><span>${escapeHtml(c.name)}</span></label>`)
+      .join('');
+  }
+
+  function selectedCategoryIds() {
+    return Array.from(els.formCategories.querySelectorAll('input[name="cats"]:checked'))
+      .map((cb) => Number(cb.value))
+      .filter((id) => id > 0);
+  }
+
+  function updateLogoPreview() {
+    const url = safeHref(state.modalLogo);
+    els.logoPreview.innerHTML = url
+      ? `<img src="${escapeHtml(url)}" alt="logo" onerror="this.parentNode.innerHTML='<span>×</span>';">`
+      : '<span>无</span>';
+  }
+
+  function updateSiteIconPreview() {
+    const url = safeHref(state.siteIconDraft);
+    $('#siteIconPreview').innerHTML = url
+      ? `<img src="${escapeHtml(url)}" alt="icon" onerror="this.parentNode.innerHTML='<span>×</span>';">`
+      : '<span>无</span>';
+  }
+
+  function renderDownloadRows() {
+    if (!state.modalDownloads.length) {
+      els.downloadRows.innerHTML = `<div class="hint-text">${escapeHtml(t('form.downloadEmpty'))}</div>`;
+      return;
+    }
+    els.downloadRows.innerHTML = state.modalDownloads
+      .map((row, i) => `
+        <div class="download-row" data-index="${i}">
+          <input type="text" class="dl-text" value="${escapeHtml(row.text)}" placeholder="${escapeHtml(t('form.dlText'))}">
+          <input type="text" class="dl-link" value="${escapeHtml(row.link)}" placeholder="${escapeHtml(t('form.dlLink'))}">
+          <button type="button" class="btn btn-small btn-ghost rm" data-rm="${i}">${escapeHtml(t('form.rm'))}</button>
+        </div>`)
+      .join('');
+  }
+
+  function collectDownloads() {
+    return Array.from(els.downloadRows.querySelectorAll('.download-row')).map((row) => ({
+      text: row.querySelector('.dl-text').value.trim(),
+      link: row.querySelector('.dl-link').value.trim(),
+    }));
+  }
+
+  function openModal(item = null) {
+    if (!state.user) {
+      openLogin();
+      toast(t('toast.needLogin'));
+      return;
+    }
+    state.editingId = item ? item.id : null;
+    state.modalLogo = item ? item.logo || '' : '';
+    state.modalDownloads = item ? (item.downloads || []).map((d) => ({ ...d })) : [];
+    state.modalCardColor = item ? item.card_color || '' : '';
+    els.cardColorText.value = state.modalCardColor;
+    syncColorPicker(state.modalCardColor);
+
+    els.modalTitle.textContent = t(item ? 'modal.editTitle' : 'modal.addTitle');
+    els.formError.textContent = '';
+    els.form.reset();
+    els.form.querySelector('[name="name"]').value = item ? item.name : '';
+    els.form.querySelector('[name="description"]').value = item ? item.description || '' : '';
+    els.form.querySelector('[name="url_home"]').value = item ? item.url_home || '' : '';
+    els.form.querySelector('[name="url_github"]').value = item ? item.url_github || '' : '';
+    els.form.querySelector('[name="url_release"]').value = item ? item.url_release || '' : '';
+    els.form.querySelector('[name="url_doc"]').value = item ? item.url_doc || '' : '';
+    els.logoUrl.value = state.modalLogo;
+
+    refreshFormCategories();
+    const preset = item
+      ? (item.category_ids || []).map(String)
+      : (state.activeCategory === 'all' || state.activeCategory === 'uncategorized' ? [] : [String(state.activeCategory)]);
+    els.formCategories.querySelectorAll('input[name="cats"]').forEach((cb) => {
+      cb.checked = preset.includes(cb.value);
+    });
+
+    const platforms = (item && item.platforms) || {};
+    els.form.querySelectorAll('input[name="platform"]').forEach((cb) => {
+      cb.checked = !!platforms[cb.value];
+    });
+
+    const licenses = (item && item.licenses) || [];
+    els.form.querySelectorAll('input[name="license"]').forEach((cb) => {
+      cb.checked = licenses.includes(cb.value);
+    });
+
+    renderDownloadRows();
+    updateLogoPreview();
+    els.modal.hidden = false;
+  }
+
+  function closeModal() {
+    els.modal.hidden = true;
+    state.editingId = null;
+  }
+
+  async function submitSoftware(event) {
+    event.preventDefault();
+    els.formError.textContent = '';
+    const name = els.form.querySelector('[name="name"]').value.trim();
+    if (!name) {
+      els.formError.textContent = t('form.errorName');
+      return;
+    }
+    const body = {
+      name,
+      category_ids: selectedCategoryIds(),
+      description: els.form.querySelector('[name="description"]').value.trim(),
+      logo: els.logoUrl.value.trim(),
+      url_home: els.form.querySelector('[name="url_home"]').value.trim(),
+      url_github: els.form.querySelector('[name="url_github"]').value.trim(),
+      url_release: els.form.querySelector('[name="url_release"]').value.trim(),
+      url_doc: els.form.querySelector('[name="url_doc"]').value.trim(),
+      downloads: collectDownloads(),
+      platforms: {},
+      licenses: [],
+      card_color: (els.cardColorText.value || '').trim(),
+    };
+    els.form.querySelectorAll('input[name="platform"]').forEach((cb) => {
+      body.platforms[cb.value] = cb.checked;
+    });
+    els.form.querySelectorAll('input[name="license"]:checked').forEach((cb) => {
+      body.licenses.push(cb.value);
+    });
+
+    const btn = $('#saveSoftware');
+    btn.disabled = true;
+    btn.textContent = t('form.saving');
+    try {
+      if (state.editingId) {
+        await api(`/api/software/${state.editingId}`, { method: 'PUT', body: JSON.stringify(body) });
+        toast(t('toast.saved'));
+      } else {
+        await api('/api/software', { method: 'POST', body: JSON.stringify(body) });
+        state.page = 1;
+        toast(t('toast.added'));
+      }
+      closeModal();
+      await refreshAll();
+    } catch (err) {
+      els.formError.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = t('form.save');
+    }
+  }
+
+  let deletingItem = null;
+
+  function currentViewCategory() {
+    if (state.activeCategory === 'all' || state.activeCategory === 'uncategorized') return null;
+    return state.categories.find((c) => String(c.id) === String(state.activeCategory)) || null;
+  }
+
+  function openDeleteDialog(item) {
+    if (!item) return;
+    deletingItem = item;
+    const names = item.category_names || [];
+    const viewCat = currentViewCategory();
+    const inView = viewCat
+      ? (item.category_ids || []).map(String).includes(String(viewCat.id))
+      : false;
+
+    els.deleteOne.hidden = !viewCat;
+    els.deleteOne.disabled = !inView;
+    if (viewCat) els.deleteOne.textContent = t('delete.onlyThis', { cat: viewCat.name });
+
+    if (names.length > 1) {
+      els.deleteHint.textContent = t('delete.hint', {
+        name: item.name, n: names.length, cats: names.join('、'),
+      });
+    } else if (names.length === 1) {
+      els.deleteHint.textContent = t('delete.hintOne', { name: item.name, cat: names[0] });
+    } else {
+      els.deleteHint.textContent = t('delete.hintNoCat', { name: item.name });
+    }
+    els.deleteModal.hidden = false;
+  }
+
+  function closeDeleteDialog() {
+    els.deleteModal.hidden = true;
+    deletingItem = null;
+  }
+
+  async function confirmDelete(scope) {
+    if (!deletingItem) return;
+    const item = deletingItem;
+    const viewCat = currentViewCategory();
+    let url = `/api/software/${item.id}`;
+    if (scope === 'category' && viewCat) url += `?category_id=${viewCat.id}`;
+    try {
+      await api(url, { method: 'DELETE' });
+      closeDeleteDialog();
+      await refreshAll();
+      if (scope === 'category' && viewCat) {
+        toast(t('toast.removedFrom', { cat: viewCat.name }));
+      } else {
+        toast(t('toast.deleted'));
+      }
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+
+  async function uploadImage(file, onDone) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast(t('toast.iconBig'), true);
+      return;
+    }
+    try {
+      toast(t('toast.uploading'));
+      const res = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+        credentials: 'same-origin',
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((data && data.error) || '上传失败');
+      onDone(data.url);
+      toast(t('toast.uploaded'));
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+
+  // ---------------- 事件绑定 ----------------
+  applyCols();
+  els.pageSizeSelect.value = String(state.pageSize);
+  els.sortSelect.value = state.sort;
+  if (els.platformFilter) els.platformFilter.value = state.platform;
+  if (els.licenseFilter) els.licenseFilter.value = state.license;
+
+  els.platformFilter.addEventListener('change', async () => {
+    state.platform = els.platformFilter.value;
+    state.page = 1;
+    await loadSoftware();
+  });
+
+  els.licenseFilter.addEventListener('change', async () => {
+    state.license = els.licenseFilter.value;
+    state.page = 1;
+    await loadSoftware();
+  });
+
+  function applyCols() {
+    els.cardGrid.dataset.cols = state.focused ? '1' : String(state.cols);
+    els.colsSelect.value = state.focused ? '1' : String(state.cols);
+  }
+
+  els.btnSelectMode.addEventListener('click', () => {
+    if (!state.user) {
+      openLogin();
+      toast(t('toast.needLogin'));
+      return;
+    }
+    enterSelectMode(!state.selectMode);
+  });
+
+  els.bulkMoveSelect.addEventListener('change', () => {
+    if (!els.bulkMoveSelect.value) return;
+    bulkMove();
+  });
+
+  els.bulkDelete.addEventListener('click', () => {
+    bulkRemove();
+  });
+
+  $('#confirmOk').addEventListener('click', runConfirm);
+  $('#confirmCancel').addEventListener('click', closeConfirm);
+  $('#confirmClose').addEventListener('click', closeConfirm);
+  els.confirmModal.addEventListener('click', (e) => {
+    if (e.target === els.confirmModal) closeConfirm();
+  });
+
+  els.colsSelect.addEventListener('change', async () => {
+    state.cols = normalizeCols(els.colsSelect.value);
+    state.focused = null;
+    localStorage.setItem('hub.cols', String(state.cols));
+    applyCols();
+    renderCards();
+  });
+
+  els.pageSizeSelect.addEventListener('change', async () => {
+    state.pageSize = normalizePageSize(els.pageSizeSelect.value);
+    localStorage.setItem('hub.pageSize', String(state.pageSize));
+    state.page = 1;
+    await loadSoftware();
+  });
+
+  els.sortSelect.addEventListener('change', async () => {
+    state.sort = els.sortSelect.value;
+    localStorage.setItem('hub.sort', state.sort);
+    state.page = 1;
+    await loadSoftware();
+  });
+
+  let searchTimer = null;
+  els.searchInput.addEventListener('input', () => {
+    const value = els.searchInput.value.trim();
+    els.searchClear.hidden = !value;
+    if (state.focused && value !== state.focusName) {
+      state.focused = null;
+      applyCols();
+    }
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(async () => {
+      state.q = value;
+      state.page = 1;
+      await loadSoftware();
+    }, 320);
+  });
+
+  els.searchClear.addEventListener('click', async () => {
+    els.searchInput.value = '';
+    els.searchClear.hidden = true;
+    state.q = '';
+    state.focused = null;
+    state.selectMode = false;
+    state.selected.clear();
+    applyCols();
+    state.page = 1;
+    await loadSoftware();
+    els.searchInput.focus();
+  });
+
+  // 分类拖拽排序
+  let dragRow = null;
+  els.categoryList.addEventListener('dragstart', (event) => {
+    const row = event.target.closest('.cat-item[draggable="true"]');
+    if (!row) return;
+    dragRow = row;
+    row.classList.add('dragging');
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      try { event.dataTransfer.setData('text/plain', row.dataset.id); } catch (_) { /* ignore */ }
+    }
+  });
+
+  els.categoryList.addEventListener('dragover', (event) => {
+    if (!dragRow) return;
+    event.preventDefault();
+    const row = event.target.closest('.cat-item');
+    if (!row || row === dragRow) return;
+    if (row.dataset.id === 'all' || row.dataset.id === 'uncategorized') return;
+    const rect = row.getBoundingClientRect();
+    const insertAfter = event.clientY - rect.top > rect.height / 2;
+    els.categoryList.insertBefore(dragRow, insertAfter ? row.nextSibling : row);
+  });
+
+  els.categoryList.addEventListener('dragend', async () => {
+    if (!dragRow) return;
+    dragRow.classList.remove('dragging');
+    dragRow = null;
+    const ids = [...els.categoryList.querySelectorAll('.cat-item[draggable="true"]')]
+      .map((row) => Number(row.dataset.id));
+    try {
+      await api('/api/categories/order', { method: 'POST', body: JSON.stringify({ ids }) });
+      const map = new Map(state.categories.map((c) => [String(c.id), c]));
+      state.categories = ids.map((id) => map.get(String(id))).filter(Boolean);
+      renderCategories();
+      toast(t('toast.categoryOrder'));
+    } catch (err) {
+      toast(err.message, true);
+      await loadCategories();
+      renderCategories();
+    }
+  });
+
+  els.categoryList.addEventListener('click', async (event) => {
+    const delBtn = event.target.closest('[data-del]');
+    if (delBtn) {
+      event.stopPropagation();
+      const cat = state.categories.find((c) => String(c.id) === String(delBtn.dataset.del));
+      if (!cat) return;
+      try {
+        await removeCategory(cat.id, cat.name, cat.count || 0);
+      } catch (err) {
+        toast(err.message, true);
+      }
+      return;
+    }
+    const item = event.target.closest('.cat-item');
+    if (!item) return;
+    const id = item.dataset.id;
+    if (state.activeCategory === id && !state.q) return;
+    state.activeCategory = id;
+    state.page = 1;
+    state.focused = null;
+    state.selectMode = false;
+    state.selected.clear();
+    applyCols();
+    if (state.q) {
+      state.q = '';
+      els.searchInput.value = '';
+      els.searchClear.hidden = true;
+    }
+    renderCategories();
+    await loadSoftware();
+  });
+
+  els.categoryForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!state.user) return;
+    const input = $('#newCategoryInput');
+    const name = input.value.trim();
+    if (!name) return;
+    try {
+      await addCategory(name);
+      input.value = '';
+    } catch (err) {
+      toast(err.message, true);
+    }
+  });
+
+  els.cardGrid.addEventListener('click', async (event) => {
+    if (state.selectMode && !event.target.closest('.card-actions')) {
+      const card = event.target.closest('.card');
+      if (card) toggleSelect(card.dataset.id);
+      return;
+    }
+    const pinBtn = event.target.closest('[data-pin]');
+    if (pinBtn) {
+      const item = state.items.find((i) => String(i.id) === String(pinBtn.dataset.pin));
+      if (!item) return;
+      const next = !item.pinned;
+      pinBtn.disabled = true;
+      try {
+        await api(`/api/software/${item.id}/pin`, {
+          method: 'POST',
+          body: JSON.stringify({ pinned: next }),
+        });
+        state.page = 1;
+        await loadSoftware();
+        toast(t(next ? 'toast.pinned' : 'toast.unpinned', { name: item.name }));
+      } catch (err) {
+        pinBtn.disabled = false;
+        toast(err.message, true);
+      }
+      return;
+    }
+    const editBtn = event.target.closest('[data-edit]');
+    if (editBtn) {
+      const item = state.items.find((i) => String(i.id) === String(editBtn.dataset.edit));
+      if (item) openModal(item);
+      return;
+    }
+    const removeBtn = event.target.closest('[data-remove]');
+    if (removeBtn) {
+      const item = state.items.find((i) => String(i.id) === String(removeBtn.dataset.remove));
+      openDeleteDialog(item);
+      return;
+    }
+    // 「只显示图标」模式下点卡片：按名称搜索并以单卡片方式聚焦显示
+    const card = event.target.closest('.card');
+    if (card && state.cols === 'icon' && !state.focused) {
+      const id = card.dataset.id;
+      const item = state.items.find((i) => String(i.id) === String(id));
+      if (item) await focusCard(item);
+    }
+  });
+
+  async function focusCard(item) {
+    state.focused = item.id;
+    state.focusName = item.name;
+    state.selectMode = false;
+    state.selected.clear();
+    state.q = item.name;
+    state.page = 1;
+    els.searchInput.value = item.name;
+    els.searchClear.hidden = false;
+    applyCols();
+    await loadSoftware();
+  }
+
+  els.pageNumbers.addEventListener('click', async (event) => {
+    const btn = event.target.closest('[data-page]');
+    if (!btn) return;
+    const page = Number(btn.dataset.page);
+    if (page === state.page) return;
+    state.page = page;
+    await loadSoftware();
+  });
+
+  els.prevPage.addEventListener('click', async () => {
+    if (state.page <= 1) return;
+    state.page -= 1;
+    await loadSoftware();
+  });
+
+  els.nextPage.addEventListener('click', async () => {
+    if (state.page >= state.pages) return;
+    state.page += 1;
+    await loadSoftware();
+  });
+
+  $('#jumpForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const value = Number(els.jumpInput.value);
+    if (!Number.isInteger(value) || value < 1 || value > state.pages) {
+      toast(t('toast.pageRange', { max: state.pages }), true);
+      return;
+    }
+    if (value === state.page) return;
+    state.page = value;
+    await loadSoftware();
+  });
+
+  els.btnAddSoftware.addEventListener('click', () => {
+    openModal();
+  });
+
+  els.btnLogin.addEventListener('click', openLogin);
+  $('#closeLogin').addEventListener('click', () => { els.loginModal.hidden = true; });
+  $('#cancelLogin').addEventListener('click', () => { els.loginModal.hidden = true; });
+  els.loginModal.addEventListener('click', (e) => {
+    if (e.target === els.loginModal) els.loginModal.hidden = true;
+  });
+  els.loginForm.addEventListener('submit', submitLogin);
+  $('#forgotLink').addEventListener('click', () => { $('#forgotModal').hidden = false; });
+  $('#closeForgot').addEventListener('click', () => { $('#forgotModal').hidden = true; });
+  $('#okForgot').addEventListener('click', () => { $('#forgotModal').hidden = true; });
+
+  els.btnSettings.addEventListener('click', openSettings);
+  $('#closeSettings').addEventListener('click', () => { els.settingsModal.hidden = true; });
+  $('#cancelSettings').addEventListener('click', () => { els.settingsModal.hidden = true; });
+  els.settingsModal.addEventListener('click', (e) => {
+    if (e.target === els.settingsModal) els.settingsModal.hidden = true;
+  });
+  $('#saveSettings').addEventListener('click', saveSettings);
+  $('#saveAccount').addEventListener('click', saveAccount);
+  els.btnLogoutTop.addEventListener('click', logout);
+
+  const themeToggle = document.getElementById('themeToggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-theme-value]');
+      if (!btn) return;
+      localStorage.setItem(THEME_KEY, btn.dataset.themeValue);
+      applyTheme(btn.dataset.themeValue);
+    });
+  }
+
+  function syncColorPicker(value) {
+    const hex = /^#[0-9a-fA-F]{6}$/.test(value) ? value : '';
+    els.cardColorPicker.value = hex || '#ffffff';
+  }
+
+  els.cardColorText.addEventListener('input', () => {
+    state.modalCardColor = els.cardColorText.value.trim();
+    syncColorPicker(state.modalCardColor);
+  });
+
+  els.cardColorPicker.addEventListener('input', () => {
+    state.modalCardColor = els.cardColorPicker.value;
+    els.cardColorText.value = state.modalCardColor;
+  });
+
+  $('#clearCardColor').addEventListener('click', () => {
+    state.modalCardColor = '';
+    els.cardColorText.value = '';
+    syncColorPicker('');
+  });
+
+  $('#settingSiteIcon').addEventListener('input', () => {
+    state.siteIconDraft = $('#settingSiteIcon').value.trim();
+    updateSiteIconPreview();
+  });
+
+  $('#siteIconFile').addEventListener('change', () => {
+    const file = $('#siteIconFile').files && $('#siteIconFile').files[0];
+    uploadImage(file, (url) => {
+      $('#settingSiteIcon').value = url;
+      state.siteIconDraft = url;
+      updateSiteIconPreview();
+    });
+    $('#siteIconFile').value = '';
+  });
+
+  $('#downloadBackup').addEventListener('click', () => {
+    window.location.href = '/api/backup';
+  });
+
+  $('#restoreFile').addEventListener('change', async () => {
+    const file = $('#restoreFile').files && $('#restoreFile').files[0];
+    $('#restoreFile').value = '';
+    if (!file) return;
+    if (!window.confirm(t('confirm.restore'))) return;
+    $('#backupError').textContent = '';
+    try {
+      toast(t('toast.restoring'));
+      const res = await fetch('/api/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: file,
+        credentials: 'same-origin',
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((data && data.error) || '恢复失败');
+      toast(t('toast.restored'));
+      setTimeout(() => window.location.reload(), 1200);
+    } catch (err) {
+      $('#backupError').textContent = err.message;
+    }
+  });
+
+  $('#closeModal').addEventListener('click', closeModal);
+  $('#cancelModal').addEventListener('click', closeModal);
+  els.modal.addEventListener('click', (e) => {
+    if (e.target === els.modal) closeModal();
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    [els.modal, els.loginModal, els.settingsModal, $('#forgotModal'), els.deleteModal, els.confirmModal].forEach((m) => {
+      if (m && !m.hidden) m.hidden = true;
+    });
+  });
+
+  els.form.addEventListener('submit', submitSoftware);
+
+  $('#deleteOne').addEventListener('click', () => confirmDelete('category'));
+  $('#deleteAll').addEventListener('click', () => confirmDelete('all'));
+  $('#deleteCancel').addEventListener('click', closeDeleteDialog);
+  $('#closeDelete').addEventListener('click', closeDeleteDialog);
+  els.deleteModal.addEventListener('click', (e) => {
+    if (e.target === els.deleteModal) closeDeleteDialog();
+  });
+
+  els.logoUrl.addEventListener('input', () => {
+    state.modalLogo = els.logoUrl.value.trim();
+    updateLogoPreview();
+  });
+
+  els.logoFile.addEventListener('change', () => {
+    const file = els.logoFile.files && els.logoFile.files[0];
+    uploadImage(file, (url) => {
+      state.modalLogo = url;
+      els.logoUrl.value = url;
+      updateLogoPreview();
+    });
+    els.logoFile.value = '';
+  });
+
+  $('#clearLogo').addEventListener('click', () => {
+    state.modalLogo = '';
+    els.logoUrl.value = '';
+    updateLogoPreview();
+  });
+
+  $('#addDownload').addEventListener('click', () => {
+    state.modalDownloads = collectDownloads();
+    state.modalDownloads.push({ text: '', link: '' });
+    renderDownloadRows();
+  });
+
+  els.downloadRows.addEventListener('click', (event) => {
+    const rm = event.target.closest('[data-rm]');
+    if (!rm) return;
+    state.modalDownloads = collectDownloads();
+    state.modalDownloads.splice(Number(rm.dataset.rm), 1);
+    renderDownloadRows();
+  });
+
+  // ---------------- 启动 ----------------
+  (async function boot() {
+    try {
+      await loadSettings();
+    } catch (err) {
+      applyI18n();
+    }
+    try {
+      await loadAuth();
+    } catch (err) {
+      state.user = '';
+      renderAuthUI();
+    }
+    await refreshAll().catch((err) => {
+      els.cardGrid.innerHTML = `<div class="empty-state"><div class="big">加载失败</div><div>${escapeHtml(err.message)}</div></div>`;
+    });
+  })();
+})();

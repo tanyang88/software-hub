@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>软件库</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="page-container topbar-inner">
+    <div class="brand">
+      <div class="brand-mark" id="brandMark">软</div>
+      <div class="brand-text">
+        <h1 id="siteName">软件库</h1>
+        <p id="siteTagline">专属于你的软件收藏</p>
+      </div>
+    </div>
+
+    <div class="topbar-tools">
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input type="search" id="searchInput" data-i18n-ph="search.placeholder" placeholder="搜索软件名称或简介" autocomplete="off">
+        <button type="button" class="search-clear" id="searchClear" hidden aria-label="清除">×</button>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn btn-primary" id="btnAddSoftware" data-i18n="btn.addSoftware" hidden>＋ 添加软件</button>
+        <button class="btn btn-ghost" id="btnSettings" data-i18n="btn.settings" hidden>设置</button>
+        <span class="user-name" id="userName" hidden></span>
+        <button class="btn btn-ghost" id="btnLogoutTop" data-i18n="btn.logout" hidden>退出登录</button>
+        <button class="btn btn-ghost" id="btnLogin" data-i18n="btn.login">登录</button>
+        <div class="theme-toggle" id="themeToggle" role="group" aria-label="主题">
+          <button type="button" data-theme-value="light" title="明亮模式" aria-label="明亮模式">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <circle cx="12" cy="12" r="4.2"></circle>
+              <path d="M12 2.6v2.4M12 19v2.4M2.6 12h2.4M19 12h2.4M5.2 5.2l1.7 1.7M17.1 17.1l1.7 1.7M18.8 5.2l-1.7 1.7M6.9 17.1l-1.7 1.7"></path>
+            </svg>
+          </button>
+          <button type="button" data-theme-value="system" title="跟随系统" aria-label="跟随系统">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <rect x="3" y="4.5" width="18" height="12.5" rx="2"></rect>
+              <path d="M9 20h6M12 17v3"></path>
+            </svg>
+          </button>
+          <button type="button" data-theme-value="dark" title="暗黑模式" aria-label="暗黑模式">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="page-container layout">
+  <div class="sidebar-col">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <span data-i18n="sidebar.title">软件分类</span>
+      <span class="sidebar-total" id="allCount"></span>
+    </div>
+    <nav class="category-list" id="categoryList"></nav>
+    <form class="category-add" id="categoryForm" hidden>
+      <input type="text" id="newCategoryInput" maxlength="20" data-i18n-ph="sidebar.newCategory" placeholder="新分类名称" autocomplete="off">
+      <button type="submit" class="btn btn-small" data-i18n="sidebar.add">添加</button>
+    </form>
+    <p class="sidebar-tip" id="sidebarTip" data-i18n="sidebar.tip" hidden>分类可自定义，点分类右侧的 × 可删除</p>
+  </aside>
+
+  <div class="side-box">
+    <label class="side-box-label" for="platformFilter" data-i18n="filter.platform">系统平台</label>
+    <select id="platformFilter">
+      <option value="" data-i18n="filter.allPlatform">全部平台</option>
+      <option value="windows">Windows</option>
+      <option value="mac">Mac</option>
+      <option value="linux">Linux</option>
+      <option value="android">Android</option>
+      <option value="ios">iOS</option>
+    </select>
+  </div>
+
+  <div class="side-box">
+    <label class="side-box-label" for="licenseFilter" data-i18n="filter.license">授权方式</label>
+    <select id="licenseFilter">
+      <option value="" data-i18n="filter.allLicense">全部授权</option>
+      <option value="free" data-i18n="license.free">免费</option>
+      <option value="subscription" data-i18n="license.subscription">订阅制</option>
+      <option value="onetime" data-i18n="license.onetime">一次性买断</option>
+      <option value="metered" data-i18n="license.metered">按量计费</option>
+      <option value="freemium" data-i18n="license.freemium">基础免费+增值收费</option>
+    </select>
+  </div>
+  </div>
+
+  <main class="content">
+    <div class="content-head">
+      <div class="content-title">
+        <h2 id="currentCategory">全部软件</h2>
+        <span class="muted" id="countInfo"></span>
+      </div>
+      <div class="content-tools">
+        <div class="bulk-tools" id="bulkTools" hidden>
+          <label class="field-inline">
+            <span data-i18n="content.moveTo">移动至</span>
+            <select id="bulkMoveSelect"></select>
+          </label>
+          <button type="button" class="btn btn-small btn-danger" id="bulkDelete" data-i18n="bulk.delete">删除</button>
+        </div>
+        <button type="button" class="btn btn-small btn-ghost" id="btnSelectMode" data-i18n="bulk.enter" hidden>多选</button>
+        <label class="field-inline">
+          <span data-i18n="content.perRow">每行显示</span>
+          <select id="colsSelect">
+            <option value="1" data-i18n="option.one">1 个卡片</option>
+            <option value="2" data-i18n="option.two" selected>2 个卡片</option>
+            <option value="icon" data-i18n="option.icon">只显示图标</option>
+          </select>
+        </label>
+        <label class="field-inline">
+          <span data-i18n="content.perPage">每页显示</span>
+          <select id="pageSizeSelect">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="30">30</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </label>
+        <label class="field-inline">
+          <span data-i18n="content.sort">排序</span>
+          <select id="sortSelect">
+            <option value="default" data-i18n="sort.default">默认排序</option>
+            <option value="updated" data-i18n="sort.updated">最新更新</option>
+            <option value="oldest" data-i18n="sort.oldest">最早上架</option>
+            <option value="name_asc" data-i18n="sort.name_asc">A-Z 正序</option>
+            <option value="name_desc" data-i18n="sort.name_desc">Z-A 倒序</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="card-scroll" id="cardScroll">
+      <div class="card-grid" id="cardGrid" data-cols="2"></div>
+
+      <div class="pager" id="pager">
+        <button class="btn btn-ghost" id="prevPage" data-i18n="pager.prev">上一页</button>
+        <div class="page-numbers" id="pageNumbers"></div>
+        <button class="btn btn-ghost" id="nextPage" data-i18n="pager.next">下一页</button>
+        <form class="page-jump" id="jumpForm">
+          <span data-i18n="pager.jumpPrefix">跳至</span>
+          <input type="number" id="jumpInput" min="1" value="1">
+          <span data-i18n="pager.jumpSuffix">页</span>
+          <button type="submit" class="btn btn-small" data-i18n="pager.go">GO</button>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 登录弹窗 -->
+<div class="modal-mask" id="loginModal" hidden>
+  <div class="modal modal-small">
+    <div class="modal-head">
+      <h3 data-i18n="login.title">登录</h3>
+      <button class="icon-btn" id="closeLogin" title="关闭">×</button>
+    </div>
+    <form class="modal-body" id="loginForm">
+      <div class="form-item">
+        <label for="loginUser" data-i18n="login.username">用户名</label>
+        <input type="text" id="loginUser" autocomplete="username" data-i18n-ph="login.usernamePlaceholder" placeholder="请输入用户名">
+      </div>
+      <div class="form-item">
+        <label for="loginPass" data-i18n="login.password">密码</label>
+        <input type="password" id="loginPass" autocomplete="current-password" data-i18n-ph="login.passwordPlaceholder" placeholder="请输入密码">
+      </div>
+      <div class="login-row">
+        <label class="checkbox-line">
+          <input type="checkbox" id="rememberPass">
+          <span data-i18n="login.remember">记住密码</span>
+        </label>
+        <button type="button" class="link-btn" id="forgotLink" data-i18n="login.forgot">忘记密码？</button>
+      </div>
+      <div class="form-error" id="loginError"></div>
+      <div class="modal-foot">
+        <span></span>
+        <div>
+          <button type="button" class="btn btn-ghost" id="cancelLogin" data-i18n="form.cancel">取消</button>
+          <button type="submit" class="btn btn-primary" id="loginSubmit" data-i18n="login.submit">登录</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 忘记密码弹窗 -->
+<div class="modal-mask" id="forgotModal" hidden>
+  <div class="modal modal-small">
+    <div class="modal-head">
+      <h3 data-i18n="forgot.title">忘记密码</h3>
+      <button class="icon-btn" id="closeForgot" title="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text" data-i18n="forgot.body">本站密码保存在服务器本地。请在服务器上执行下面的命令重置密码：</p>
+      <pre class="code-block">docker compose exec software-hub python app/reset_password.py
+# 或指定新密码：
+docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_password.py</pre>
+      <p class="hint-text" data-i18n="forgot.hint">不填新密码时，默认重置为 admin123，重置后请尽快在「设置 → 账号安全」里修改。</p>
+      <div class="modal-foot">
+        <span></span>
+        <button type="button" class="btn btn-primary" id="okForgot" data-i18n="forgot.close">我知道了</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 设置弹窗 -->
+<div class="modal-mask" id="settingsModal" hidden>
+  <div class="modal modal-wide">
+    <div class="modal-head">
+      <h3 data-i18n="settings.title">设置</h3>
+      <button class="icon-btn" id="closeSettings" title="关闭">×</button>
+    </div>
+    <div class="modal-body" id="settingsBody">
+      <section class="settings-section">
+        <h4 data-i18n="settings.siteSection">站点设置</h4>
+        <div class="form-row">
+          <div class="form-item">
+            <label for="settingSiteName" data-i18n="settings.siteName">站点名称</label>
+            <input type="text" id="settingSiteName" maxlength="30">
+          </div>
+          <div class="form-item">
+            <label for="settingSiteTitle" data-i18n="settings.siteTitle">网站标题</label>
+            <input type="text" id="settingSiteTitle" maxlength="60">
+          </div>
+        </div>
+        <div class="form-item">
+          <label for="settingSiteTagline" data-i18n="settings.siteTagline">站点副标题</label>
+          <input type="text" id="settingSiteTagline" maxlength="80" data-i18n-ph="settings.siteTaglineHint" placeholder="专属于你的软件收藏">
+        </div>
+        <div class="form-item">
+          <label data-i18n="settings.siteIcon">网站图标</label>
+          <div class="logo-input">
+            <div class="logo-preview" id="siteIconPreview"><span>无</span></div>
+            <div class="logo-fields">
+              <input type="text" id="settingSiteIcon" placeholder="/static/favicon.svg">
+              <div class="logo-actions">
+                <label class="btn btn-small btn-ghost file-btn">
+                  <span data-i18n="settings.iconUpload">上传图标</span>
+                  <input type="file" id="siteIconFile" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" hidden>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-item">
+          <label for="settingLanguage" data-i18n="settings.language">语言</label>
+          <select id="settingLanguage">
+            <option value="zh-CN">简体中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h4 data-i18n="settings.account">账号安全</h4>
+        <div class="form-item">
+          <label for="accUsername" data-i18n="settings.newUsername">新用户名</label>
+          <input type="text" id="accUsername" maxlength="30" autocomplete="username">
+        </div>
+        <div class="form-item">
+          <label for="accCurrent" data-i18n="settings.currentPwd">当前密码</label>
+          <input type="password" id="accCurrent" autocomplete="current-password">
+        </div>
+        <div class="form-item">
+          <label for="accNewPass" data-i18n="settings.newPwd">新密码（留空则不修改）</label>
+          <input type="password" id="accNewPass" autocomplete="new-password">
+        </div>
+        <div class="section-actions">
+          <span class="form-error" id="accountError"></span>
+          <button type="button" class="btn btn-small" id="saveAccount" data-i18n="settings.saveAccount">保存账号设置</button>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h4 data-i18n="settings.backup">备份与恢复</h4>
+        <p class="hint-text" data-i18n="settings.backupHint">备份包含数据库和上传的图标；恢复会覆盖当前全部数据，请先下载备份。</p>
+        <div class="section-actions">
+          <span class="form-error" id="backupError"></span>
+          <div class="btn-group">
+            <button type="button" class="btn btn-small" id="downloadBackup" data-i18n="settings.download">下载备份</button>
+            <label class="btn btn-small btn-ghost file-btn">
+              <span data-i18n="settings.restore">恢复备份</span>
+              <input type="file" id="restoreFile" accept=".zip,.db,application/zip,application/octet-stream" hidden>
+            </label>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    <div class="modal-foot modal-foot-bar">
+      <span class="form-error" id="settingsError"></span>
+      <div>
+        <button type="button" class="btn btn-ghost" id="cancelSettings" data-i18n="settings.close">关闭</button>
+        <button type="button" class="btn btn-primary" id="saveSettings" data-i18n="settings.save">保存设置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新增 / 编辑软件弹窗 -->
+<div class="modal-mask" id="softwareModal" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">添加软件</h3>
+      <button class="icon-btn" id="closeModal" title="关闭">×</button>
+    </div>
+    <form id="softwareForm" class="modal-form">
+      <div class="modal-body">
+      <div class="form-item">
+        <label><span data-i18n="form.name">软件名称</span> <span class="req">*</span></label>
+        <input type="text" name="name" required maxlength="60" placeholder="例如：7-Zip">
+      </div>
+      <div class="form-item">
+        <label><span data-i18n="form.category">所属分类</span><span class="muted small" data-i18n="form.categoryHint">（可多选，不选则为「未分类」）</span></label>
+        <div class="cat-picker" id="formCategories"></div>
+      </div>
+
+      <div class="form-item">
+        <label data-i18n="form.desc">软件简介</label>
+        <textarea name="description" rows="3" placeholder="例如，这是一个免费开源软件，无广告" data-i18n-ph="form.descriptionHint"></textarea>
+      </div>
+
+      <div class="form-item">
+        <label data-i18n="form.logo">图标</label>
+        <div class="logo-input">
+          <div class="logo-preview" id="logoPreview"><span>无</span></div>
+          <div class="logo-fields">
+            <input type="text" name="logo" id="logoUrl" data-i18n-ph="form.logoUrl" placeholder="图标 URL，例如 https://.../logo.png">
+            <div class="logo-actions">
+              <label class="btn btn-small btn-ghost file-btn">
+                <span data-i18n="form.upload">上传本地图片</span>
+                <input type="file" id="logoFile" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" hidden>
+              </label>
+              <button type="button" class="btn btn-small btn-ghost" id="clearLogo" data-i18n="form.clearLogo">清除</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-item">
+          <label data-i18n="form.home">官网链接</label>
+          <input type="text" name="url_home" placeholder="https://www.xxx.com">
+        </div>
+        <div class="form-item">
+          <label data-i18n="form.github">GitHub 链接</label>
+          <input type="text" name="url_github" placeholder="https://github.com/xxx/xxx">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-item">
+          <label data-i18n="form.release">版本更新链接</label>
+          <input type="text" name="url_release" placeholder="https://xxx.com/releases">
+        </div>
+        <div class="form-item">
+          <label data-i18n="form.doc">文档链接</label>
+          <input type="text" name="url_doc" placeholder="https://xxx.com/docs">
+        </div>
+      </div>
+
+      <div class="form-item">
+        <label data-i18n="form.platforms">支持系统</label>
+        <div class="platforms">
+          <label><input type="checkbox" name="platform" value="windows"> Windows</label>
+          <label><input type="checkbox" name="platform" value="mac"> Mac</label>
+          <label><input type="checkbox" name="platform" value="linux"> Linux</label>
+          <label><input type="checkbox" name="platform" value="android"> Android</label>
+          <label><input type="checkbox" name="platform" value="ios"> iOS</label>
+        </div>
+      </div>
+
+      <div class="form-item">
+        <label data-i18n="form.licenses">授权方式</label>
+        <div class="platforms license-options">
+          <label><input type="checkbox" name="license" value="free"> <span data-i18n="license.free">免费</span></label>
+          <label><input type="checkbox" name="license" value="subscription"> <span data-i18n="license.subscription">订阅制</span></label>
+          <label><input type="checkbox" name="license" value="onetime"> <span data-i18n="license.onetime">一次性买断</span></label>
+          <label><input type="checkbox" name="license" value="metered"> <span data-i18n="license.metered">按量计费</span></label>
+          <label><input type="checkbox" name="license" value="freemium"> <span data-i18n="license.freemium">基础免费+增值收费</span></label>
+        </div>
+      </div>
+
+      <div class="form-item">
+        <label data-i18n="form.downloads">下载地址</label>
+        <div class="downloads" id="downloadRows"></div>
+        <button type="button" class="btn btn-small btn-ghost" id="addDownload" data-i18n="form.addDownload">＋ 添加一条下载</button>
+      </div>
+
+      <div class="form-item">
+        <label data-i18n="form.cardColor">卡片背景色</label>
+        <div class="color-input">
+          <input type="color" id="cardColorPicker" value="#ffffff">
+          <input type="text" name="card_color" id="cardColorText" maxlength="9" data-i18n-ph="form.cardColorHint" placeholder="#f5f6f8（留空为默认背景）">
+          <button type="button" class="btn btn-small btn-ghost" id="clearCardColor" data-i18n="form.colorClear">恢复默认</button>
+        </div>
+      </div>
+      </div>
+
+      <div class="modal-foot modal-foot-bar">
+        <span class="form-error" id="formError"></span>
+        <div>
+          <button type="button" class="btn btn-ghost" id="cancelModal" data-i18n="form.cancel">取消</button>
+          <button type="submit" class="btn btn-primary" id="saveSoftware" data-i18n="form.save">保存</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 删除卡片确认 -->
+<div class="modal-mask" id="deleteModal" hidden>
+  <div class="modal modal-small">
+    <div class="modal-head">
+      <h3 data-i18n="delete.title">删除卡片</h3>
+      <button class="icon-btn" id="closeDelete" title="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text" id="deleteHint"></p>
+      <div class="delete-options">
+        <button type="button" class="btn btn-ghost delete-opt" id="deleteOne"></button>
+        <button type="button" class="btn btn-danger delete-opt" id="deleteAll" data-i18n="delete.all">删除所有分类下的卡片</button>
+        <button type="button" class="btn btn-ghost delete-opt" id="deleteCancel" data-i18n="delete.cancel">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 通用确认弹窗 -->
+<div class="modal-mask" id="confirmModal" hidden>
+  <div class="modal modal-small">
+    <div class="modal-head">
+      <h3 id="confirmTitle">删除</h3>
+      <button class="icon-btn" id="confirmClose" title="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="hint-text" id="confirmText"></p>
+      <div class="delete-options">
+        <button type="button" class="btn btn-ghost delete-opt" id="confirmCancel" data-i18n="delete.cancel">取消</button>
+        <button type="button" class="btn btn-danger delete-opt" id="confirmOk" data-i18n="confirm.ok">删除</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
