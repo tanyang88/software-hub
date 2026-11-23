@@ -29,7 +29,7 @@
 - 登录后右上角从左到右依次是「＋ 添加软件」「设置」「当前用户名」「退出登录」。
 - 删除卡片时会弹出确认框，按当前所在分类提供三个选项：**只删除该分类下的卡片 / 删除所有分类下的卡片 / 取消**。
 - 登录后右上角出现「设置」，包含：
-  - **站点设置**：站点名称、站点副标题（品牌下方那行文案，默认「专属于你的软件收藏」）、网站标题、网站图标（支持上传）、语言（简体中文 / English）。
+  - **站点设置**：站点名称、站点副标题（品牌下方那行文案，默认「专属于你的软件收藏」）、网站标题、网站图标（支持上传，改完点「保存设置」即时生效，页面左上角图标和浏览器标签页图标会一起更新）、语言（简体中文 / English）。
   - **主题切换**：顶栏最右侧有「☀ 明亮 / ▢ 跟随系统 / ☾ 暗黑」三档切换（记住在当前浏览器），设置弹窗里不再单独提供外观主题。
   - **账号安全**：修改用户名、修改密码（需填当前密码）。
   - **备份与恢复**：一键下载备份 zip（数据库 + 上传的图标）；上传备份恢复，恢复会覆盖当前全部数据并强制重新登录。
@@ -81,7 +81,7 @@ RESET_USERNAME=admin RESET_PASSWORD=新密码 python app/reset_password.py
 ## 目录结构
 
 ```
-项目-我的应用软件大全/
+software-hub/
 ├─ app/
 │  ├─ server.py            # 后端服务：API + 静态资源 + 上传 + 鉴权
 │  ├─ reset_password.py    # 忘记密码时用的重置脚本
@@ -89,7 +89,10 @@ RESET_USERNAME=admin RESET_PASSWORD=新密码 python app/reset_password.py
 │     ├─ index.html        # 页面结构
 │     ├─ styles.css        # 样式（含深色主题）
 │     ├─ app.js            # 交互逻辑（含 i18n）
-│     └─ favicon.svg
+│     ├─ favicon.svg       # 站点图标（矢量，顶栏与标签页共用）
+│     ├─ favicon.ico
+│     ├─ favicon-16/32/48/64/192/512.png
+│     └─ apple-touch-icon.png
 ├─ Dockerfile
 ├─ docker-compose.yml
 ├─ .dockerignore
@@ -102,7 +105,8 @@ RESET_USERNAME=admin RESET_PASSWORD=新密码 python app/reset_password.py
 前置：已安装 Docker（Windows / macOS 用 Docker Desktop，Linux 用 docker-ce）。
 
 ```bash
-cd 项目-我的应用软件大全
+git clone https://github.com/tanyang88/software-hub.git
+cd software-hub
 
 # 构建并后台启动
 docker compose up -d --build
@@ -134,12 +138,35 @@ Windows PowerShell 里 `-v` 的路径写成绝对路径，例如：
 docker run -d --name software-hub -p 8080:8080 -v "D:\家庭网络\项目-我的应用软件大全\data:/app/data" --restart unless-stopped software-hub:latest
 ```
 
+## 推送到 Docker Hub
+
+把下面的 `yourname` 换成你的 Docker Hub 用户名（**必须全小写**）：
+
+```bash
+docker login
+
+# 同时打 latest 和版本号两个标签
+docker build -t yourname/software-hub:latest -t yourname/software-hub:1.0.0 .
+docker push yourname/software-hub:latest
+docker push yourname/software-hub:1.0.0
+```
+
+推送成功后，任何装了 Docker 的机器都能直接拉取运行，不需要源码：
+
+```bash
+docker run -d --name software-hub -p 8080:8080 \
+  -v "$(pwd)/data:/app/data" -e TZ=Asia/Shanghai \
+  --restart unless-stopped yourname/software-hub:latest
+```
+
+镜像内已固定 `DATA_DIR=/app/data`，只要挂载 `data` 目录数据就持久化；升级流程：`docker pull` → `docker rm -f software-hub` → 用同样命令重新 run（`data` 目录不动，数据不丢）。
+
 ## 本地直接运行（不装 Docker 也能用）
 
 需要 Python 3.9+，无第三方依赖：
 
 ```bash
-cd 项目-我的应用软件大全
+cd software-hub
 python app/server.py
 ```
 
@@ -166,7 +193,7 @@ python app/server.py
 | 站点名称 | `site_name` | 任意文本（≤500 字） |
 | 站点副标题 | `site_tagline` | 品牌下方那行文案；留空显示默认「专属于你的软件收藏」 |
 | 网站标题 | `site_title` | 任意文本（≤500 字） |
-| 网站图标 | `site_icon` | 图标 URL 或上传后的 `/uploads/xxx.png` |
+| 网站图标 | `site_icon` | 图标 URL 或上传后的 `/uploads/xxx.png`；上传支持 **png / jpg / jpeg / gif / webp / svg**，单文件 ≤ 5MB。推荐 SVG（任意尺寸都清晰）或 512×512 透明底 PNG |
 | 外观主题 | `theme` | `light` / `dark` / `system`（接口保留；页面以浏览器本地记住的主题切换为准） |
 | 语言 | `language` | `zh-CN` / `en` |
 
