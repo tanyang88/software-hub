@@ -141,7 +141,7 @@ docker run -d --name software-hub -p 8080:8080 -v "$(pwd)/data:/app/data" --rest
 Windows PowerShell 里 `-v` 的路径写成绝对路径，例如：
 
 ```powershell
-docker run -d --name software-hub -p 8080:8080 -v "D:\家庭网络\项目-我的应用软件大全\data:/app/data" --restart unless-stopped software-hub:latest
+docker run -d --name software-hub -p 8080:8080 -v "D:\家庭网络\项目-我的应用软件大全\software-hub\data:/app/data" --restart unless-stopped software-hub:latest
 ```
 
 ## 推送到 Docker Hub
