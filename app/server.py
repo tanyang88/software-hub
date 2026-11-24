@@ -14,6 +14,7 @@ import hashlib
 import hmac
 import io
 import json
+import math
 import os
 import re
 import secrets
@@ -22,7 +23,7 @@ import sys
 import urllib.parse
 import uuid
 import zipfile
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -75,7 +76,18 @@ SORT_OPTIONS = {
     "oldest": "s.id ASC",
     "name_asc": "s.name_sort COLLATE NOCASE ASC, s.id ASC",
     "name_desc": "s.name_sort COLLATE NOCASE DESC, s.id ASC",
+    "hot": "s.hot_score DESC, s.id DESC",
 }
+
+# 热门打分：行为权重 + 近 7 天 / 近 30 天加权（指数衰减）
+HOT_WEIGHTS = {"link_click": 1.0, "icon_click": 0.6, "focus_view": 0.4, "search_hit": 0.3}
+HOT_STAT_COLUMNS = {
+    "link_click": "link_clicks",
+    "icon_click": "icon_clicks",
+    "focus_view": "focus_views",
+    "search_hit": "search_hits",
+}
+EVENT_TYPES = ("link_click", "icon_click", "focus_view", "search")
 
 # 置顶卡片永远排在最前，且不受排序影响
 PINNED_FIRST = "s.pinned DESC, "
@@ -123,6 +135,124 @@ def connect():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+
+def _today_str():
+    return date.today().isoformat()
+
+
+def bump_stat(conn, software_id, event_type, delta=1):
+    """给某个软件当天对应行为的计数 +delta"""
+    column = HOT_STAT_COLUMNS.get(event_type)
+    if not column or not software_id:
+        return
+    today = _today_str()
+    conn.execute(
+        "INSERT OR IGNORE INTO software_stats (software_id, date) VALUES (?, ?)",
+        (software_id, today),
+    )
+    conn.execute(
+        "UPDATE software_stats SET %s = %s + ? WHERE software_id = ? AND date = ?"
+        % (column, column),
+        (delta, software_id, today),
+    )
+
+
+def _decayed_sum(rows, days, tau):
+    """窗口内按天计数做指数衰减加权求和"""
+    today = date.today()
+    total = 0.0
+    for row in rows:
+        try:
+            age = (today - date.fromisoformat(row["date"])).days
+        except ValueError:
+            continue
+        if age < 0 or age > days:
+            continue
+        weight = math.exp(-age / tau)
+        total += weight * (
+            row["link_clicks"] * HOT_WEIGHTS["link_click"]
+            + row["icon_clicks"] * HOT_WEIGHTS["icon_click"]
+            + row["focus_views"] * HOT_WEIGHTS["focus_view"]
+            + row["search_hits"] * HOT_WEIGHTS["search_hit"]
+        )
+    return total
+
+
+def compute_hot_score(conn, software_id):
+    """热度 = 0.6 × 近 7 天（τ=7） + 0.4 × 近 30 天（τ=14）"""
+    rows = conn.execute(
+        "SELECT date, link_clicks, icon_clicks, focus_views, search_hits "
+        "FROM software_stats WHERE software_id = ? AND date >= ?",
+        (software_id, (date.today() - timedelta(days=30)).isoformat()),
+    ).fetchall()
+    score = 0.6 * _decayed_sum(rows, 7, 7.0) + 0.4 * _decayed_sum(rows, 30, 14.0)
+    conn.execute("UPDATE software SET hot_score = ? WHERE id = ?", (round(score, 6), software_id))
+    return score
+
+
+def recompute_all_hot(conn):
+    for row in conn.execute("SELECT id FROM software").fetchall():
+        compute_hot_score(conn, row["id"])
+
+
+def record_event(body):
+    """记录一次前端行为；写原始事件 + 当天汇总 + 刷新该软件热度分"""
+    event_type = (body.get("type") or "").strip()
+    if event_type not in EVENT_TYPES:
+        raise ValueError("不支持的事件类型")
+    field = (body.get("field") or "").strip()[:40]
+    keyword = (body.get("keyword") or "").strip()[:60]
+
+    conn = connect()
+    try:
+        software_id = None
+        raw_id = body.get("software_id")
+        if raw_id not in (None, "", 0):
+            try:
+                software_id = int(raw_id)
+            except (TypeError, ValueError):
+                software_id = None
+
+        if event_type == "search":
+            if not keyword:
+                return {"ok": True}
+            conn.execute(
+                "INSERT INTO events (type, keyword) VALUES (?, ?)", (event_type, keyword)
+            )
+            today = _today_str()
+            conn.execute(
+                "INSERT OR IGNORE INTO search_terms (term, date) VALUES (?, ?)", (keyword, today)
+            )
+            conn.execute(
+                "UPDATE search_terms SET hits = hits + 1 WHERE term = ? AND date = ?",
+                (keyword, today),
+            )
+            # 被搜索命中：名称包含关键词的软件各加一次搜索热度（最多 20 个）
+            matched = conn.execute(
+                "SELECT id FROM software WHERE name LIKE ? LIMIT 20", ("%" + keyword + "%",)
+            ).fetchall()
+            for row in matched:
+                bump_stat(conn, row["id"], "search_hit")
+                compute_hot_score(conn, row["id"])
+        else:
+            if not software_id:
+                return {"ok": True}
+            if not conn.execute(
+                "SELECT 1 FROM software WHERE id = ?", (software_id,)
+            ).fetchone():
+                return {"ok": True}
+            conn.execute(
+                "INSERT INTO events (type, software_id, field) VALUES (?, ?, ?)",
+                (event_type, software_id, field),
+            )
+            bump_stat(conn, software_id, event_type)
+            compute_hot_score(conn, software_id)
+
+        conn.commit()
+        return {"ok": True}
+    finally:
+        conn.close()
 
 
 def init_db():
@@ -239,6 +369,41 @@ def init_db():
             conn.execute(
                 "UPDATE software SET name_sort = ? WHERE id = ?", (pinyin.key(r["name"]), r["id"])
             )
+
+        # 热门排序：热度分派生列 + 行为事件表 + 按天汇总表
+        if "hot_score" not in columns:
+            conn.execute("ALTER TABLE software ADD COLUMN hot_score REAL NOT NULL DEFAULT 0")
+            columns.append("hot_score")
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type TEXT NOT NULL,
+                software_id INTEGER,
+                field TEXT NOT NULL DEFAULT '',
+                keyword TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_events_created ON events(created_at);
+            CREATE INDEX IF NOT EXISTS idx_events_software ON events(software_id, created_at);
+            CREATE TABLE IF NOT EXISTS software_stats (
+                software_id INTEGER NOT NULL,
+                date TEXT NOT NULL,
+                link_clicks INTEGER NOT NULL DEFAULT 0,
+                icon_clicks INTEGER NOT NULL DEFAULT 0,
+                focus_views INTEGER NOT NULL DEFAULT 0,
+                search_hits INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (software_id, date)
+            );
+            CREATE TABLE IF NOT EXISTS search_terms (
+                term TEXT NOT NULL,
+                date TEXT NOT NULL,
+                hits INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (term, date)
+            );
+            """
+        )
+        recompute_all_hot(conn)
 
         normalize_uncategorized(conn)
 
@@ -1349,6 +1514,9 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/auth/logout":
                 delete_session(self.cookie_token())
                 return self.clear_session_cookie()
+            if path == "/api/events":
+                # 行为埋点：允许匿名浏览时也能统计；只做极轻量校验
+                return self.send_json(record_event(self.read_body()))
 
             self.require_auth()
             if path == "/api/categories":

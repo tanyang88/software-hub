@@ -23,7 +23,8 @@
 - **卡片背景色**：编辑卡片时可自定义背景色（色板或手填 `#rrggbb`），文字颜色按背景亮度自动切换黑白以保证可读。
 - **分页浏览**：每页条数可切换（10 / 20 / 30 / 50 / 100），支持页码跳转。
 - **搜索**：顶栏居中搜索框按名称 / 简介模糊匹配，输入即搜（320ms 防抖），点分类会自动清空搜索条件。
-- **排序**：默认排序、最新更新、最早上架、A-Z 正序、Z-A 倒序；置顶卡片始终排在最前。A-Z / Z-A 对中文名按**拼音**排序（阿里 → 百度 → 长城 → 重启 → 钉钉 → 微软 → 微信），不是按 Unicode 码点乱序；拼音表内嵌在 `app/pinyin.py`，运行时不需要安装任何第三方库。
+- **排序**：默认排序、最新更新、最早上架、A-Z 正序、Z-A 倒序、**🔥 热门排序**；置顶卡片始终排在最前。A-Z / Z-A 对中文名按**拼音**排序（阿里 → 百度 → 长城 → 重启 → 钉钉 → 微软 → 微信），不是按 Unicode 码点乱序；拼音表内嵌在 `app/pinyin.py`，运行时不需要安装任何第三方库。
+- **热门统计**：前端只上报三类最小信息——卡片内链接点击（官网 / GitHub / 更新 / 文档 / 其他链接 / 下载地址，带链接标识）、仅图标模式下点卡片、防抖后的搜索关键词；写入 `events` 原始表与 `software_stats` 按天汇总表，热度分 = `0.6 × 近 7 天(τ=7) + 0.4 × 近 30 天(τ=14)`，行为权重为链接点击 1.0、图标点击 0.6、聚焦查看 0.4、被搜索命中 0.3；结果落在 `software.hot_score` 派生列，热门排序直接按它倒序（打平按 id 倒序），纯 SQLite 实现，不依赖任何第三方统计服务，也不记录 IP / UA。
 - **筛选**：左侧分类列表下方新增「系统平台」与「授权方式」两个下拉框，与分类、搜索、排序叠加生效，共同决定右侧展示的卡片。
 
 ### 登录与权限
@@ -230,6 +231,9 @@ python app/server.py
 | GET | `/api/software?category_id=all&page=1&page_size=20&sort=default&q=&platform=&license=` | 软件分页列表（`page_size` 默认 20、上限 120）；`category_id` 取 `all` / `uncategorized` / 具体分类 id；`q` 非空时按名称/简介搜索并忽略 `category_id`；`platform` 取 `windows`/`mac`/`linux`/`android`/`ios`/`harmonyos`，`license` 取 `free`/`subscription`/`onetime`/`metered`/`freemium`，留空即不过滤；各条件可叠加；置顶卡片始终排在最前 |
 | GET | `/api/settings` | 站点设置 |
 | GET | `/api/auth/me` | 当前登录状态 |
+| POST | `/api/events` | 行为埋点（热门排序数据源，匿名可用）：`{ "type": "link_click" \| "icon_click" \| "focus_view", "software_id": 3, "field": "url_home" }` 或 `{ "type": "search", "keyword": "7-zip" }`；类型不合法返回 400，软件不存在或关键词为空时静默忽略 |
+
+`sort` 取值在原有基础上增加 `hot`（按 `hot_score` 倒序）。
 
 需要登录（否则 401）：
 

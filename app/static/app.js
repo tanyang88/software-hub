@@ -85,6 +85,7 @@
       'sort.oldest': '最早上架',
       'sort.name_asc': 'A-Z 正序',
       'sort.name_desc': 'Z-A 倒序',
+      'sort.hot': '🔥 热门排序',
       'pager.prev': '上一页',
       'pager.next': '下一页',
       'pager.jumpPrefix': '跳至',
@@ -296,6 +297,7 @@
       'sort.oldest': 'Oldest first',
       'sort.name_asc': 'Name A-Z',
       'sort.name_desc': 'Name Z-A',
+      'sort.hot': '🔥 Popular',
       'pager.prev': 'Prev',
       'pager.next': 'Next',
       'pager.jumpPrefix': 'Go to',
@@ -640,6 +642,36 @@
     els.toast.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2600);
+  }
+
+  // ---------------- 行为埋点（热门排序的数据来源） ----------------
+  // 只上报最小信息：事件类型、软件 id、链接标识、关键词；3 秒内相同事件去重。
+  const trackRecent = new Map();
+
+  function trackEvent(type, payload = {}) {
+    try {
+      const key = [type, payload.software_id || '', payload.field || '', payload.keyword || ''].join('|');
+      const now = Date.now();
+      const last = trackRecent.get(key) || 0;
+      if (now - last < 3000) return;
+      trackRecent.set(key, now);
+      if (trackRecent.size > 200) trackRecent.clear();
+
+      const body = JSON.stringify({ type, ...payload });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/events', new Blob([body], { type: 'application/json' }));
+      } else {
+        fetch('/api/events', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch (err) {
+      // 埋点失败绝不影响主流程
+    }
   }
 
   async function api(url, options = {}) {
@@ -1041,7 +1073,7 @@
     return `<div class="logo-fallback">${letter}</div>`;
   }
 
-  function linkRow(labelKey, url, textKey, customLabel, customText) {
+  function linkRow(labelKey, url, textKey, customLabel, customText, hitField) {
     const href = safeHref(url);
     if (!href) return '';
     const label = (customLabel || '').trim();
@@ -1049,7 +1081,7 @@
     return `
       <div class="card-line">
         <span class="label">${label ? `${escapeHtml(label)}：` : escapeHtml(t(labelKey))}</span>
-        <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>
+        <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer"${hitField ? ` data-hit="${escapeHtml(hitField)}"` : ''}>${escapeHtml(text)}</a>
       </div>`;
   }
 
@@ -1080,7 +1112,7 @@
     const list = (downloads || []).filter((d) => d && d.text && safeHref(d.link));
     const body = list.length
       ? list
-          .map((d) => `<a href="${escapeHtml(safeHref(d.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml(d.text)}</a>`)
+          .map((d) => `<a href="${escapeHtml(safeHref(d.link))}" target="_blank" rel="noopener noreferrer" data-hit="downloads">${escapeHtml(d.text)}</a>`)
           .join('<span class="card-sep">|</span>')
       : `<span class="no-download">${escapeHtml(t('card.noDownload'))}</span>`;
     return `
@@ -1097,7 +1129,7 @@
       .map((l) => `
       <div class="card-line">
         <span class="label">${escapeHtml(l.text)}：</span>
-        <a href="${escapeHtml(safeHref(l.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml((l.label || '').trim() || l.link)}</a>
+        <a href="${escapeHtml(safeHref(l.link))}" target="_blank" rel="noopener noreferrer" data-hit="extra_links">${escapeHtml((l.label || '').trim() || l.link)}</a>
       </div>`)
       .join('');
   }
@@ -1171,10 +1203,10 @@
             ${item.description ? `<div class="card-desc">${renderMarkdown(item.description)}</div>` : ''}
           </div>
           <div class="card-links">
-            ${linkRow('card.website', item.url_home, null, item.url_home_label, item.url_home_text)}
-            ${linkRow('card.github', item.url_github, null, item.url_github_label, item.url_github_text)}
-            ${linkRow('card.release', item.url_release, null, item.url_release_label, item.url_release_text)}
-            ${linkRow('card.docs', item.url_doc, null, item.url_doc_label, item.url_doc_text)}
+            ${linkRow('card.website', item.url_home, null, item.url_home_label, item.url_home_text, 'url_home')}
+            ${linkRow('card.github', item.url_github, null, item.url_github_label, item.url_github_text, 'url_github')}
+            ${linkRow('card.release', item.url_release, null, item.url_release_label, item.url_release_text, 'url_release')}
+            ${linkRow('card.docs', item.url_doc, null, item.url_doc_label, item.url_doc_text, 'url_doc')}
             ${extraLinksHtml(item.extra_links)}
           </div>
           ${platformsLine(item.platforms)}
@@ -1858,6 +1890,8 @@
       state.q = value;
       state.page = 1;
       await loadSoftware();
+      // 只记录防抖后的最终关键词，且跳过聚焦视图自动带入的名称
+      if (value && value !== state.focusName) trackEvent('search', { keyword: value });
     }, 320);
   });
 
@@ -2008,12 +2042,24 @@
       openDeleteDialog(item);
       return;
     }
+    // 卡片内的外链点击：只记一次 link_click，不阻止新窗口打开
+    const hitLink = event.target.closest('a[data-hit]');
+    if (hitLink) {
+      const hitCard = event.target.closest('.card');
+      if (hitCard) {
+        trackEvent('link_click', { software_id: hitCard.dataset.id, field: hitLink.dataset.hit });
+      }
+    }
     // 「只显示图标」模式下点卡片：按名称搜索并以单卡片方式聚焦显示
     const card = event.target.closest('.card');
     if (card && state.cols === 'icon' && !state.focused) {
       const id = card.dataset.id;
       const item = state.items.find((i) => String(i.id) === String(id));
-      if (item) await focusCard(item);
+      if (item) {
+        trackEvent('icon_click', { software_id: item.id, field: 'icon' });
+        trackEvent('focus_view', { software_id: item.id, field: 'focus' });
+        await focusCard(item);
+      }
     }
   });
 
