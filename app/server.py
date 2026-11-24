@@ -975,6 +975,24 @@ def parse_software_payload(body, conn):
     }
 
 
+def search_relevance_clause(q):
+    """搜索结果的相关度排序：名称完全一致 > 名称忽略空格/连字符后一致
+    > 名称前缀 > 名称包含 > 名称忽略符号后包含 > 只在简介命中"""
+    ql = q.lower()
+    compact = re.sub(r"[\s\-_]+", "", ql)
+    sql = (
+        "CASE "
+        "WHEN lower(trim(s.name)) = ? THEN 100 "
+        "WHEN lower(replace(replace(replace(trim(s.name), ' ', ''), '-', ''), '_', '')) = ? THEN 95 "
+        "WHEN lower(s.name) LIKE ? THEN 80 "
+        "WHEN lower(s.name) LIKE ? THEN 60 "
+        "WHEN lower(replace(replace(replace(s.name, ' ', ''), '-', ''), '_', '')) LIKE ? THEN 55 "
+        "ELSE 30 END"
+    )
+    params = [ql, compact, ql + "%", "%" + ql + "%", "%" + compact + "%"]
+    return sql, params
+
+
 def list_software(query):
     try:
         page = max(1, int(query.get("page", ["1"])[0]))
@@ -997,10 +1015,15 @@ def list_software(query):
 
     where = []
     params = []
+    order_params = []
     if q:
-        where.append("(s.name LIKE ? OR s.description LIKE ?)")
+        compact_q = re.sub(r"[\s\-_]+", "", q.lower())
+        where.append(
+            "(s.name LIKE ? OR s.description LIKE ? OR "
+            "lower(replace(replace(replace(s.name, ' ', ''), '-', ''), '_', '')) LIKE ?)"
+        )
         like = "%" + q + "%"
-        params.extend([like, like])
+        params.extend([like, like, "%" + compact_q + "%"])
     elif category_id == "uncategorized":
         where.append(
             "NOT EXISTS (SELECT 1 FROM software_categories sc WHERE sc.software_id = s.id)"
@@ -1024,6 +1047,12 @@ def list_software(query):
         params.append(license_key)
 
     where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+    # 有搜索词时，名称相关的卡片优先，置顶/所选排序只作为次级规则
+    if q:
+        relevance_sql, order_params = search_relevance_clause(q)
+        final_order = relevance_sql + " DESC, " + PINNED_FIRST + order_by
+    else:
+        final_order = PINNED_FIRST + order_by
 
     conn = connect()
     try:
@@ -1032,9 +1061,9 @@ def list_software(query):
         rows = conn.execute(
             f"""SELECT s.* FROM software s
                 {where_sql}
-                ORDER BY {PINNED_FIRST}{order_by}
+                ORDER BY {final_order}
                 LIMIT ? OFFSET ?""",
-            params + [page_size, offset],
+            params + order_params + [page_size, offset],
         ).fetchall()
         pages = max(1, (total + page_size - 1) // page_size)
         if page > pages and total > 0:
