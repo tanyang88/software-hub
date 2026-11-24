@@ -203,6 +203,11 @@
       'settings.hotWindow30': '近 30 天',
       'settings.hotWindowOff': '关闭热门排序',
       'settings.hotHint': '近 7 天 = 0.6×近 7 天 + 0.4×近 30 天衰减；近 30 天 = 单窗口衰减；关闭后排序里不再显示「热门排序」。',
+      'settings.searchSection': '搜索',
+      'settings.searchHighlight': '搜索结果高亮关键词',
+      'settings.searchHighlightHint': '开启后，搜索时命中的关键词会在卡片名称和简介里标黄显示；关闭则按原样展示。',
+      'settings.about': '关于',
+      'settings.aboutVersion': '当前版本：2.2',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -432,6 +437,11 @@
       'settings.hotWindow30': 'Last 30 days',
       'settings.hotWindowOff': 'Turn off popular sorting',
       'settings.hotHint': '7 days = 0.6 × last 7 days + 0.4 × last 30 days (decayed); 30 days = single decayed window; off hides the Popular sort option.',
+      'settings.searchSection': 'Search',
+      'settings.searchHighlight': 'Highlight matched keywords',
+      'settings.searchHighlightHint': 'When on, matched keywords are highlighted in card names and descriptions while searching.',
+      'settings.about': 'About',
+      'settings.aboutVersion': 'Current version: 2.2',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -660,6 +670,35 @@
     return restoreCodes(out.join(''));
   }
 
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // 在已经转义过的 HTML 里高亮关键词：只处理标签之间的文本，不动标签和属性
+  function highlightHtml(html, keyword) {
+    const raw = String(keyword || '').trim();
+    if (!raw) return html;
+    const escaped = escapeHtml(raw);
+    const re = new RegExp(escapeRegExp(escaped), 'gi');
+    return String(html)
+      .split(/(<[^>]*>)/)
+      .map((segment) => {
+        if (!segment || segment.startsWith('<')) return segment;
+        return segment.replace(re, (match) => `<mark class="search-hit">${match}</mark>`);
+      })
+      .join('');
+  }
+
+  function highlightNameHtml(name, keyword) {
+    return highlightHtml(escapeHtml(name), keyword);
+  }
+
+  function searchHighlightKeyword() {
+    const on = state.settings && state.settings.search_highlight !== '0';
+    if (!on || !state.q || state.focused) return '';
+    return state.q;
+  }
+
   function t(key, vars) {
     const dict = I18N[state.lang] || I18N['zh-CN'];
     let text = dict[key] != null ? dict[key] : (I18N['zh-CN'][key] != null ? I18N['zh-CN'][key] : key);
@@ -838,6 +877,7 @@
     $('#settingHotWindow').value = settings.hot_window === 'off'
       ? 'off'
       : (settings.hot_window === '30' ? '30' : '7');
+    $('#settingSearchHighlight').checked = settings.search_highlight !== '0';
     state.siteIconDraft = settings.site_icon || '';
     updateSiteIconPreview();
   }
@@ -925,6 +965,7 @@
       site_icon: $('#settingSiteIcon').value.trim(),
       language: $('#settingLanguage').value,
       hot_window: $('#settingHotWindow').value,
+      search_highlight: $('#settingSearchHighlight').checked ? '1' : '0',
     };
     if (!payload.site_name) {
       $('#settingsError').textContent = t('settings.siteName');
@@ -1295,6 +1336,8 @@
     const check = state.selectMode
       ? `<span class="card-check"><input type="checkbox" data-sel="${item.id}" ${state.selected.has(String(item.id)) ? 'checked' : ''} aria-label="select"></span>`
       : '';
+    const hitKw = searchHighlightKeyword();
+    const nameHtml = hitKw ? highlightNameHtml(item.name, hitKw) : escapeHtml(item.name);
     if (state.cols === 'icon' && !state.focused) {
       classes.push('card-compact');
       return `
@@ -1303,9 +1346,12 @@
         ${cardActionsHtml(item, true)}
         ${item.pinned ? `<span class="pin-flag" title="${escapeHtml(t('card.badgePin'))}">📌</span>` : ''}
         <div class="card-logo">${logoHtml(item)}</div>
-        <h3 class="card-title">${escapeHtml(item.name)}</h3>
+        <h3 class="card-title">${nameHtml}</h3>
       </article>`;
     }
+    const descHtml = item.description
+      ? `<div class="card-desc">${hitKw ? highlightHtml(renderMarkdown(item.description), hitKw) : renderMarkdown(item.description)}</div>`
+      : '';
     return `
       <article class="${classes.join(' ')}" data-id="${item.id}"${style}>
         ${check}
@@ -1315,12 +1361,12 @@
         <div class="card-main">
           <div>
             <div class="card-title-row">
-              <h3 class="card-title">${escapeHtml(item.name)}</h3>
+              <h3 class="card-title">${nameHtml}</h3>
               ${(item.category_names || []).length && state.activeCategory === 'all'
                 ? `<span class="card-cats">${(item.category_names || []).map((n) => `<span class="cat-tag">${escapeHtml(n)}</span>`).join('')}</span>`
                 : ''}
             </div>
-            ${item.description ? `<div class="card-desc">${renderMarkdown(item.description)}</div>` : ''}
+            ${descHtml}
           </div>
           <div class="card-links">
             ${linkRow('card.website', item.url_home, null, item.url_home_label, item.url_home_text, 'url_home')}

@@ -1590,3 +1590,82 @@ button, input, textarea, select { font-family: inherit; }
   white-space: nowrap;
 }
 
+/* ---------------- 搜索高亮 / 设置开关 / 关于 ---------------- */
+.search-hit {
+  background: #ffe58f;
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+[data-theme="dark"] .search-hit {
+  background: #6b4f00;
+  color: #ffe9a8;
+}
+
+.switch-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.switch-line input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch-track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--border-strong, #d0d5dd);
+  transition: background 0.18s ease;
+}
+
+.switch-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+  transition: transform 0.18s ease;
+}
+
+.switch-line input:checked + .switch-track {
+  background: var(--primary, #2563eb);
+}
+
+.switch-line input:checked + .switch-track::after {
+  transform: translateX(16px);
+}
+
+.switch-line input:focus-visible + .switch-track {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+}
+
+[data-theme="dark"] .switch-track {
+  background: #3a4353;
+}
+
+.about-version {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+

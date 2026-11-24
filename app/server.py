@@ -55,6 +55,7 @@ DEFAULT_SETTINGS = {
     "theme": "system",
     "language": "zh-CN",
     "hot_window": "7",  # 热门统计时间窗：7 / 30 / off（关闭热门排序）
+    "search_highlight": "1",  # 搜索结果是否高亮关键词：1 / 0
 }
 
 CONTENT_TYPES = {
