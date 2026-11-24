@@ -161,6 +161,7 @@
       'form.dlText': '名称，如：Windows 版',
       'form.dlLink': '下载链接，如：https://xxx.exe',
       'form.rm': '移除',
+      'form.dragHint': '按住拖曳调整顺序',
       'form.platforms': '支持系统',
       'form.cardColor': '卡片背景色',
       'form.cardColorHint': '#f5f6f8（留空为默认背景）',
@@ -206,7 +207,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.2.1',
+      'settings.aboutVersion': '当前版本：2.2.2',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -394,6 +395,7 @@
       'form.dlText': 'Name, e.g. Windows build',
       'form.dlLink': 'Link, e.g. https://...',
       'form.rm': 'Remove',
+      'form.dragHint': 'Drag to reorder',
       'form.platforms': 'Platforms',
       'form.cardColor': 'Card background',
       'form.cardColorHint': '#f5f6f8 (blank = default)',
@@ -439,7 +441,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.2.1',
+      'settings.aboutVersion': 'Current version: 2.2.2',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -1718,11 +1720,33 @@
     els.downloadRows.innerHTML = state.modalDownloads
       .map((row, i) => `
         <div class="download-row" data-index="${i}">
+          <button type="button" class="drag-handle" data-drag="${i}" title="${escapeHtml(t('form.dragHint'))}" aria-label="${escapeHtml(t('form.dragHint'))}">
+            <svg viewBox="0 0 10 16" width="10" height="16" aria-hidden="true" focusable="false">
+              <circle cx="2.5" cy="3" r="1.3"></circle><circle cx="7.5" cy="3" r="1.3"></circle>
+              <circle cx="2.5" cy="8" r="1.3"></circle><circle cx="7.5" cy="8" r="1.3"></circle>
+              <circle cx="2.5" cy="13" r="1.3"></circle><circle cx="7.5" cy="13" r="1.3"></circle>
+            </svg>
+          </button>
           <input type="text" class="dl-text" value="${escapeHtml(row.text)}" placeholder="${escapeHtml(t('form.dlText'))}">
           <input type="text" class="dl-link" value="${escapeHtml(row.link)}" placeholder="${escapeHtml(t('form.dlLink'))}">
           <button type="button" class="btn btn-small btn-ghost rm" data-rm="${i}">${escapeHtml(t('form.rm'))}</button>
         </div>`)
       .join('');
+  }
+
+  function syncDownloadOrder() {
+    const rows = Array.from(els.downloadRows.querySelectorAll('.download-row'));
+    state.modalDownloads = rows.map((row) => ({
+      text: row.querySelector('.dl-text').value.trim(),
+      link: row.querySelector('.dl-link').value.trim(),
+    }));
+    rows.forEach((row, i) => {
+      row.dataset.index = String(i);
+      const handle = row.querySelector('.drag-handle');
+      if (handle) handle.dataset.drag = String(i);
+      const rm = row.querySelector('[data-rm]');
+      if (rm) rm.dataset.rm = String(i);
+    });
   }
 
   function collectDownloads() {
@@ -2441,6 +2465,53 @@
     state.modalDownloads = collectDownloads();
     state.modalDownloads.splice(Number(rm.dataset.rm), 1);
     renderDownloadRows();
+  });
+
+  // 下载地址行拖曳排序：按住左侧手柄才能拖动整行，避免影响输入框选字
+  let draggingDownloadRow = null;
+  els.downloadRows.addEventListener('mousedown', (event) => {
+    const handle = event.target.closest('.drag-handle');
+    if (!handle) return;
+    const row = handle.closest('.download-row');
+    if (!row) return;
+    row.draggable = true;
+    // 没真正拖起来时（鼠标松开）自动收回 draggable，避免之后整行误拖
+    const release = () => {
+      document.removeEventListener('mouseup', release);
+      if (!draggingDownloadRow) row.draggable = false;
+    };
+    document.addEventListener('mouseup', release);
+  });
+  els.downloadRows.addEventListener('dragstart', (event) => {
+    const row = event.target.closest('.download-row');
+    if (!row) return;
+    draggingDownloadRow = row;
+    row.classList.add('dragging');
+    event.dataTransfer.effectAllowed = 'move';
+    try { event.dataTransfer.setData('text/plain', row.dataset.index || ''); } catch (err) { /* 忽略 */ }
+  });
+  els.downloadRows.addEventListener('dragover', (event) => {
+    if (!draggingDownloadRow) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    const target = event.target.closest('.download-row');
+    if (!target || target === draggingDownloadRow) return;
+    const box = target.getBoundingClientRect();
+    const after = event.clientY > box.top + box.height / 2;
+    els.downloadRows.insertBefore(draggingDownloadRow, after ? target.nextSibling : target);
+  });
+  const endDownloadDrag = () => {
+    if (!draggingDownloadRow) return;
+    draggingDownloadRow.classList.remove('dragging');
+    draggingDownloadRow.draggable = false;
+    draggingDownloadRow = null;
+    syncDownloadOrder();
+  };
+  els.downloadRows.addEventListener('dragend', endDownloadDrag);
+  els.downloadRows.addEventListener('drop', (event) => {
+    if (!draggingDownloadRow) return;
+    event.preventDefault();
+    endDownloadDrag();
   });
 
   $('#addExtraLink').addEventListener('click', () => {

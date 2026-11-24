@@ -967,11 +967,36 @@ button, input, textarea, select { font-family: inherit; }
 .three-row .row-spacer { display: block; }
 .extra-row .rm { justify-self: start; }
 
-/* 下载地址保持改造前的两输入框形态：名称占 34%，链接自适应 */
-.download-row { display: flex; gap: 8px; align-items: center; }
-.download-row input { flex: 1; min-width: 0; }
-.download-row input.dl-text { flex: 0 0 34%; }
+/* 下载地址保持改造前的两输入框形态：左侧拖曳手柄 + 名称占 34% + 链接自适应 */
+.download-row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 34%) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.download-row input { width: 100%; min-width: 0; }
 .download-row .rm { flex: 0 0 auto; }
+.download-row.dragging { opacity: 0.55; }
+
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: grab;
+  touch-action: none;
+}
+
+.drag-handle svg { fill: currentColor; }
+
+.drag-handle:hover { background: rgba(127, 127, 127, 0.14); color: var(--text); }
+.drag-handle:active { cursor: grabbing; }
 
 /* 其他链接：沿用下载行的排版，输入框与上方表单等宽对齐 */
 .extra-links { display: flex; flex-direction: column; gap: 8px; }
