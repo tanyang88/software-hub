@@ -13,7 +13,7 @@
 - **简介支持 Markdown**：软件简介可写基础 Markdown（加粗 `**x**`、斜体 `*x*`、删除线 `~~x~~`、行内代码 `` `x` ``、链接 `[文字](https://…)`、`- ` 列表、`## ` 小标题、换行），卡片前端按 Markdown 渲染，内容先做 HTML 转义，链接只允许 http/https。
 - **链接编辑**：官网、GitHub、版本更新、文档这四个链接统一为「名称 / 链接 / 显示文字」三列——名称留空就用默认名称（🌐 官方网站、🌐 GitHub 地址、📌 版本更新、📖 官方文档），链接留空则该行不显示，显示文字留空则卡片上直接显示链接地址本身。
 - **其他链接**：编辑时在「版本更新链接 / 文档链接」下方可添加任意多条「名称 + 链接 + 显示文字」，行排版与「下载地址」一致（同样是三列 + 删除按钮，左右边界和列宽对齐），卡片上按填写顺序显示在「官方文档」下方，形如「镜像下载：高速镜像」；名称或链接留空的行保存时自动忽略。
-- **下载地址**：同样支持「名称 / 链接 / 显示文字」三列，可添加多条，显示文字留空时卡片显示名称。
+- **下载地址**：保持「名称 + 链接」两列，可添加多条；卡片上显示为「📥 下载地址： 名称 | 名称」，点击名称即跳转到对应链接。
 - **授权方式**：编辑时可多选「免费 / 订阅制 / 一次性买断 / 按量计费 / 基础免费+增值收费」，卡片在「下载地址」上一行显示为「💰 授权方式： 免费 | 订阅制」；不选则不显示该行。
 - **布局可切换**：每行显示 1 个卡片、2 个卡片，或「只显示图标」（只显示图标 + 名称，图标在上、名称在下居中，每行 5 个等宽排列）；**默认每行 1 个卡片**，选择记在浏览器里。
 - **点击图标卡片聚焦**：在「只显示图标」模式下点击某张卡片，会自动把该软件名称填入顶栏搜索框，并以「每行 1 个卡片」的完整卡片形式单独展示（相当于聚焦这个软件）；清空搜索或点分类即回到图标模式。
@@ -256,7 +256,7 @@ python app/server.py
 
 `sort` 白名单：`default`、`updated`（最新更新）、`oldest`（最早上架）、`name_asc`（A-Z）、`name_desc`（Z-A）。
 
-软件对象字段：`name`、`category_ids`（所属分类 id 数组，可为空）、`category_names`（分类名称数组，只读返回）、`description`、`logo`、`url_home`、`url_github`、`url_release`、`url_doc`、`downloads`（`[{text, link, label?}]`，`text` 为名称、`label` 为显示文字，留空则显示名称）、`extra_links`（自定义链接，`[{text, link, label?}]`，显示在官方文档下方）、`url_home_label` / `url_home_text`、`url_github_label` / `url_github_text`、`url_release_label` / `url_release_text`、`url_doc_label` / `url_doc_text`（四个固定链接的自定义名称与显示文字，留空则用内置默认）、`platforms`（`{windows, mac, linux, android, ios, harmonyos}` 布尔值）、`licenses`（授权方式字符串数组，取值 `free`/`subscription`/`onetime`/`metered`/`freemium`，空数组合法）、`pinned`（是否置顶）、`card_color`（卡片背景色，`#rgb` / `#rrggbb` / `#rrggbbaa`，空串为默认背景）。
+软件对象字段：`name`、`category_ids`（所属分类 id 数组，可为空）、`category_names`（分类名称数组，只读返回）、`description`、`logo`、`url_home`、`url_github`、`url_release`、`url_doc`、`downloads`（`[{text, link}]`，`text` 为名称）、`extra_links`（自定义链接，`[{text, link, label?}]`，显示在官方文档下方）、`url_home_label` / `url_home_text`、`url_github_label` / `url_github_text`、`url_release_label` / `url_release_text`、`url_doc_label` / `url_doc_text`（四个固定链接的自定义名称与显示文字，留空则用内置默认）、`platforms`（`{windows, mac, linux, android, ios, harmonyos}` 布尔值）、`licenses`（授权方式字符串数组，取值 `free`/`subscription`/`onetime`/`metered`/`freemium`，空数组合法）、`pinned`（是否置顶）、`card_color`（卡片背景色，`#rgb` / `#rrggbb` / `#rrggbbaa`，空串为默认背景）。
 
 ## 常见问题
 

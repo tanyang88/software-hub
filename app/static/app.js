@@ -148,7 +148,6 @@
       'form.addDownload': '＋ 添加一条下载',
       'form.dlText': '名称，如：Windows 版',
       'form.dlLink': '下载链接，如：https://xxx.exe',
-      'form.dlLabel': '链接显示文字',
       'form.rm': '移除',
       'form.platforms': '支持系统',
       'form.cardColor': '卡片背景色',
@@ -320,7 +319,6 @@
       'card.support': '💻 Platforms: ',
       'card.license': '💰 License: ',
       'card.download': '📥 Downloads: ',
-      'card.download': '📥 Downloads: ',
       'card.viewRelease': 'View releases',
       'card.viewDocs': 'View docs',
       'card.noDownload': 'Not provided',
@@ -361,7 +359,6 @@
       'form.addDownload': '＋ Add download',
       'form.dlText': 'Name, e.g. Windows build',
       'form.dlLink': 'Link, e.g. https://...',
-      'form.dlLabel': 'Link text',
       'form.rm': 'Remove',
       'form.platforms': 'Platforms',
       'form.cardColor': 'Card background',
@@ -1083,7 +1080,7 @@
     const list = (downloads || []).filter((d) => d && d.text && safeHref(d.link));
     const body = list.length
       ? list
-          .map((d) => `<a href="${escapeHtml(safeHref(d.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml((d.label || '').trim() || d.text)}</a>`)
+          .map((d) => `<a href="${escapeHtml(safeHref(d.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml(d.text)}</a>`)
           .join('<span class="card-sep">|</span>')
       : `<span class="no-download">${escapeHtml(t('card.noDownload'))}</span>`;
     return `
@@ -1527,7 +1524,6 @@
         <div class="download-row" data-index="${i}">
           <input type="text" class="dl-text" value="${escapeHtml(row.text)}" placeholder="${escapeHtml(t('form.dlText'))}">
           <input type="text" class="dl-link" value="${escapeHtml(row.link)}" placeholder="${escapeHtml(t('form.dlLink'))}">
-          <input type="text" class="dl-label" value="${escapeHtml(row.label || '')}" placeholder="${escapeHtml(t('form.dlLabel'))}">
           <button type="button" class="btn btn-small btn-ghost rm" data-rm="${i}">${escapeHtml(t('form.rm'))}</button>
         </div>`)
       .join('');
@@ -1537,7 +1533,6 @@
     return Array.from(els.downloadRows.querySelectorAll('.download-row')).map((row) => ({
       text: row.querySelector('.dl-text').value.trim(),
       link: row.querySelector('.dl-link').value.trim(),
-      label: row.querySelector('.dl-label').value.trim(),
     }));
   }
 
