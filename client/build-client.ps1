@@ -10,6 +10,7 @@ Set-Location -LiteralPath $root
   --name software-hub-client `
   --icon "$root\app\static\favicon.ico" `
   --add-data "$root\client\launcher.html;." `
+  --add-data "$root\app\static\favicon.ico;." `
   "$root\client\client.py"
 
 if ($LASTEXITCODE -ne 0) {

@@ -238,6 +238,7 @@ def main() -> None:
         private_mode=False,
         storage_path=str(data_dir() / "webview"),
         menu=build_menu(api),
+        icon=str(resource_path("favicon.ico")) if resource_path("favicon.ico").exists() else None,
     )
 
 
