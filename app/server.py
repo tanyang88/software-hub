@@ -18,6 +18,7 @@ import os
 import re
 import secrets
 import sqlite3
+import sys
 import urllib.parse
 import uuid
 import zipfile
@@ -26,6 +27,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
+# 拼音排序键模块与本文件同目录，显式加入 sys.path，避免依赖启动方式
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+import pinyin  # noqa: E402  汉字 -> 拼音排序键（无第三方依赖）
 STATIC_DIR = BASE_DIR / "static"
 DATA_DIR = Path(os.environ.get("DATA_DIR", BASE_DIR.parent / "data")).resolve()
 UPLOAD_DIR = DATA_DIR / "uploads"
@@ -68,8 +73,8 @@ SORT_OPTIONS = {
     "default": "s.id DESC",
     "updated": "COALESCE(NULLIF(s.updated_at, ''), s.created_at) DESC, s.id DESC",
     "oldest": "s.id ASC",
-    "name_asc": "s.name COLLATE NOCASE ASC, s.id ASC",
-    "name_desc": "s.name COLLATE NOCASE DESC, s.id ASC",
+    "name_asc": "s.name_sort COLLATE NOCASE ASC, s.id ASC",
+    "name_desc": "s.name_sort COLLATE NOCASE DESC, s.id ASC",
 }
 
 # 置顶卡片永远排在最前，且不受排序影响
@@ -137,6 +142,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS software (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
+                name_sort TEXT NOT NULL DEFAULT '',
                 description TEXT NOT NULL DEFAULT '',
                 logo TEXT NOT NULL DEFAULT '',
                 url_home TEXT NOT NULL DEFAULT '',
@@ -202,6 +208,16 @@ def init_db():
         if "category_id" in columns:
             migrate_to_multi_categories(conn)
 
+        # 兼容旧库：中文按拼音排序用的派生列（name_sort 由 pinyin.key 生成）
+        if "name_sort" not in columns:
+            conn.execute("ALTER TABLE software ADD COLUMN name_sort TEXT NOT NULL DEFAULT ''")
+            columns.append("name_sort")
+        pending = conn.execute("SELECT id, name FROM software WHERE name_sort = ''").fetchall()
+        for r in pending:
+            conn.execute(
+                "UPDATE software SET name_sort = ? WHERE id = ?", (pinyin.key(r["name"]), r["id"])
+            )
+
         normalize_uncategorized(conn)
 
         for key, value in DEFAULT_SETTINGS.items():
@@ -256,6 +272,7 @@ def migrate_to_multi_categories(conn):
             CREATE TABLE software (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
+                name_sort TEXT NOT NULL DEFAULT '',
                 description TEXT NOT NULL DEFAULT '',
                 logo TEXT NOT NULL DEFAULT '',
                 url_home TEXT NOT NULL DEFAULT '',
@@ -685,11 +702,12 @@ def create_software(body):
         values = parse_software_payload(body, conn)
         cur = conn.execute(
             """INSERT INTO software
-               (name, description, logo, url_home, url_github, url_release,
+               (name, name_sort, description, logo, url_home, url_github, url_release,
                 url_doc, downloads, platforms, licenses, card_color, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))""",
             (
                 values["name"],
+                pinyin.key(values["name"]),
                 values["description"],
                 values["logo"],
                 values["url_home"],
@@ -716,13 +734,14 @@ def update_software(software_id, body):
             raise LookupError("软件不存在")
         values = parse_software_payload(body, conn)
         conn.execute(
-            """UPDATE software SET name = ?, description = ?, logo = ?,
+            """UPDATE software SET name = ?, name_sort = ?, description = ?, logo = ?,
                url_home = ?, url_github = ?, url_release = ?, url_doc = ?,
                downloads = ?, platforms = ?, licenses = ?, card_color = ?,
                updated_at = datetime('now', 'localtime')
                WHERE id = ?""",
             (
                 values["name"],
+                pinyin.key(values["name"]),
                 values["description"],
                 values["logo"],
                 values["url_home"],
