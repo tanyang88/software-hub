@@ -718,9 +718,6 @@ button, input, textarea, select { font-family: inherit; }
 
 .card-sep { margin: 0 6px; color: var(--text-secondary); }
 
-.card-downloads a { color: var(--accent); }
-
-
 .card-actions {
   position: absolute;
   top: 10px;
