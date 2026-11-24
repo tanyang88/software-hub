@@ -86,6 +86,17 @@
       'sort.name_asc': 'A-Z 正序',
       'sort.name_desc': 'Z-A 倒序',
       'sort.hot': '🔥 热门排序',
+      'hot.open': '🔥 热门榜',
+      'hot.title': '🔥 热门榜',
+      'hot.topSoftware': '热门软件 Top 10',
+      'hot.topSearches': '搜索词 Top 20',
+      'hot.trend': '近 7 天趋势',
+      'hot.empty': '还没有统计数据，点几次卡片链接或搜几个词就会出榜',
+      'hot.emptySearch': '还没有搜索记录',
+      'hot.window7': '统计窗口：近 7 天',
+      'hot.window30': '统计窗口：近 30 天',
+      'hot.windowOff': '热门统计已关闭（可在设置里开启）',
+      'hot.events': '次行为',
       'pager.prev': '上一页',
       'pager.next': '下一页',
       'pager.jumpPrefix': '跳至',
@@ -186,6 +197,12 @@
       'settings.themeDark': '深色',
       'settings.themeSystem': '跟随系统',
       'settings.language': '语言',
+      'settings.hotSection': '热门统计',
+      'settings.hotWindow': '统计时间窗',
+      'settings.hotWindow7': '近 7 天（推荐）',
+      'settings.hotWindow30': '近 30 天',
+      'settings.hotWindowOff': '关闭热门排序',
+      'settings.hotHint': '近 7 天 = 0.6×近 7 天 + 0.4×近 30 天衰减；近 30 天 = 单窗口衰减；关闭后排序里不再显示「热门排序」。',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -298,6 +315,17 @@
       'sort.name_asc': 'Name A-Z',
       'sort.name_desc': 'Name Z-A',
       'sort.hot': '🔥 Popular',
+      'hot.open': '🔥 Popular',
+      'hot.title': '🔥 Popular',
+      'hot.topSoftware': 'Top 10 software',
+      'hot.topSearches': 'Top 20 searches',
+      'hot.trend': 'Last 7 days',
+      'hot.empty': 'No data yet. Click a card link or search something to start.',
+      'hot.emptySearch': 'No search records yet',
+      'hot.window7': 'Window: last 7 days',
+      'hot.window30': 'Window: last 30 days',
+      'hot.windowOff': 'Popular stats are off (enable in Settings)',
+      'hot.events': 'events',
       'pager.prev': 'Prev',
       'pager.next': 'Next',
       'pager.jumpPrefix': 'Go to',
@@ -398,6 +426,12 @@
       'settings.themeDark': 'Dark',
       'settings.themeSystem': 'Follow system',
       'settings.language': 'Language',
+      'settings.hotSection': 'Popular stats',
+      'settings.hotWindow': 'Time window',
+      'settings.hotWindow7': 'Last 7 days (recommended)',
+      'settings.hotWindow30': 'Last 30 days',
+      'settings.hotWindowOff': 'Turn off popular sorting',
+      'settings.hotHint': '7 days = 0.6 × last 7 days + 0.4 × last 30 days (decayed); 30 days = single decayed window; off hides the Popular sort option.',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -535,6 +569,8 @@
     loginForm: $('#loginForm'),
     loginError: $('#loginError'),
     settingsModal: $('#settingsModal'),
+    hotModal: $('#hotModal'),
+    btnHotPanel: $('#btnHotPanel'),
     siteName: $('#siteName'),
     siteTagline: $('#siteTagline'),
     brandMark: $('#brandMark'),
@@ -778,6 +814,17 @@
     applyTheme();
     applyI18n();
     els.siteTagline.textContent = settings.site_tagline || t('header.subtitle');
+
+    // 关闭热门统计时，排序下拉里隐藏「热门排序」
+    const hotOption = els.sortSelect.querySelector('option[value="hot"]');
+    const hotOn = (settings.hot_window || '7') !== 'off';
+    if (hotOption) {
+      hotOption.hidden = !hotOn;
+      if (!hotOn && state.sort === 'hot') {
+        state.sort = 'default';
+        els.sortSelect.value = 'default';
+      }
+    }
   }
 
   async function loadSettings() {
@@ -788,6 +835,9 @@
     $('#settingSiteTagline').value = settings.site_tagline || t('header.subtitle');
     $('#settingSiteIcon').value = settings.site_icon || '';
     $('#settingLanguage').value = settings.language === 'en' ? 'en' : 'zh-CN';
+    $('#settingHotWindow').value = settings.hot_window === 'off'
+      ? 'off'
+      : (settings.hot_window === '30' ? '30' : '7');
     state.siteIconDraft = settings.site_icon || '';
     updateSiteIconPreview();
   }
@@ -874,6 +924,7 @@
       site_tagline: $('#settingSiteTagline').value.trim(),
       site_icon: $('#settingSiteIcon').value.trim(),
       language: $('#settingLanguage').value,
+      hot_window: $('#settingHotWindow').value,
     };
     if (!payload.site_name) {
       $('#settingsError').textContent = t('settings.siteName');
@@ -893,6 +944,75 @@
       $('#settingsError').textContent = err.message;
     } finally {
       btn.disabled = false;
+    }
+  }
+
+  // ---------------- 热门榜 ----------------
+  function openHotPanel() {
+    $('#hotError').textContent = '';
+    els.hotModal.hidden = false;
+    loadHotPanel();
+  }
+
+  async function loadHotPanel() {
+    const hint = $('#hotWindowHint');
+    const list = $('#hotList');
+    const tags = $('#hotSearches');
+    const trend = $('#hotTrend');
+    try {
+      const data = await api('/api/hot');
+      const windowMode = data.window === 'off' ? 'off' : (data.window === '30' ? '30' : '7');
+      hint.textContent = t('hot.window' + (windowMode === 'off' ? 'Off' : windowMode));
+
+      const items = data.items || [];
+      const positive = items.filter((it) => (it.hot_score || 0) > 0);
+      const shown = positive.length ? positive : items;
+      if (!positive.length) {
+        list.innerHTML = `<li class="hot-empty">${escapeHtml(t('hot.empty'))}</li>`;
+      } else {
+        list.innerHTML = shown
+          .map((it, index) => {
+            const logo = safeHref(it.logo);
+            const rank = index + 1;
+            return `<li class="hot-row" data-rank="${rank}">
+              <span class="hot-rank${rank <= 3 ? ' hot-rank-top' : ''}">${rank}</span>
+              ${logo
+                ? `<img class="hot-logo" src="${escapeHtml(logo)}" alt="">`
+                : '<span class="hot-logo hot-logo-none">·</span>'}
+              <span class="hot-name">${escapeHtml(it.name)}</span>
+              <span class="hot-score">${(it.hot_score || 0).toFixed(2)}</span>
+            </li>`;
+          })
+          .join('');
+      }
+
+      const searches = data.searches || [];
+      tags.innerHTML = searches.length
+        ? searches
+            .map(
+              (s) =>
+                `<span class="hot-tag"><span class="hot-tag-term">${escapeHtml(s.term)}</span><span class="hot-tag-hits">${s.hits}</span></span>`
+            )
+            .join('')
+        : `<span class="hot-empty">${escapeHtml(t('hot.emptySearch'))}</span>`;
+
+      const days = data.trend || [];
+      const maxTotal = Math.max(1, ...days.map((d) => d.total || 0));
+      trend.innerHTML = days
+        .map((d) => {
+          const total = d.total || 0;
+          const height = Math.max(4, Math.round((total / maxTotal) * 88));
+          const label = d.date.slice(5).replace('-', '/');
+          const tip = `${d.date} · ${t('hot.events')} ${total}（链接 ${d.link_clicks} / 图标 ${d.icon_clicks} / 聚焦 ${d.focus_views} / 搜索 ${d.search_hits}）`;
+          return `<div class="hot-bar-col" title="${escapeHtml(tip)}">
+            <span class="hot-bar-value">${total || ''}</span>
+            <span class="hot-bar" style="height:${height}px"${total ? '' : ' data-empty="1"'}></span>
+            <span class="hot-bar-label">${label}</span>
+          </div>`;
+        })
+        .join('');
+    } catch (err) {
+      $('#hotError').textContent = err.message;
     }
   }
 
@@ -2127,6 +2247,10 @@
   $('#cancelSettings').addEventListener('click', () => { els.settingsModal.hidden = true; });
   bindMaskClose(els.settingsModal, () => { els.settingsModal.hidden = true; });
   $('#saveSettings').addEventListener('click', saveSettings);
+  els.btnHotPanel.addEventListener('click', openHotPanel);
+  $('#closeHot').addEventListener('click', () => { els.hotModal.hidden = true; });
+  $('#closeHotFoot').addEventListener('click', () => { els.hotModal.hidden = true; });
+  bindMaskClose(els.hotModal, () => { els.hotModal.hidden = true; });
   $('#saveAccount').addEventListener('click', saveAccount);
   els.btnLogoutTop.addEventListener('click', logout);
 
@@ -2227,7 +2351,7 @@
   bindMaskClose(els.modal, closeModal);
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
-    [els.modal, els.loginModal, els.settingsModal, $('#forgotModal'), els.deleteModal, els.confirmModal].forEach((m) => {
+    [els.modal, els.loginModal, els.settingsModal, els.hotModal, $('#forgotModal'), els.deleteModal, els.confirmModal].forEach((m) => {
       if (m && !m.hidden) m.hidden = true;
     });
   });

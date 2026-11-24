@@ -20,6 +20,8 @@ import re
 import secrets
 import sqlite3
 import sys
+import threading
+import time
 import urllib.parse
 import uuid
 import zipfile
@@ -52,6 +54,7 @@ DEFAULT_SETTINGS = {
     "site_icon": "/static/favicon.svg",
     "theme": "system",
     "language": "zh-CN",
+    "hot_window": "7",  # 热门统计时间窗：7 / 30 / off（关闭热门排序）
 }
 
 CONTENT_TYPES = {
@@ -88,6 +91,19 @@ HOT_STAT_COLUMNS = {
     "search_hit": "search_hits",
 }
 EVENT_TYPES = ("link_click", "icon_click", "focus_view", "search")
+
+# 热门统计时间窗（可在设置页切换）：7 = 近期为主 + 中期趋势，30 = 纯 30 天窗口，off = 关闭热门排序
+HOT_WINDOW_MODES = {
+    "7": ((0.6, 7, 7.0), (0.4, 30, 14.0)),
+    "30": ((1.0, 30, 14.0),),
+    "off": (),
+}
+
+# 防刷：同一 IP 对同一条链接 / 图标 / 搜索词，10 秒内只计一次
+EVENT_THROTTLE_SECONDS = 10.0
+_EVENT_THROTTLE = {}
+_EVENT_THROTTLE_LOCK = threading.Lock()
+_EVENT_THROTTLE_MAX = 5000
 
 # 置顶卡片永远排在最前，且不受排序影响
 PINNED_FIRST = "s.pinned DESC, "
@@ -179,14 +195,36 @@ def _decayed_sum(rows, days, tau):
     return total
 
 
+def hot_window_mode(conn=None):
+    """读取设置里的热门时间窗，非法值回退 7 天"""
+    own = conn is None
+    if own:
+        conn = connect()
+    try:
+        row = conn.execute("SELECT value FROM settings WHERE key = 'hot_window'").fetchone()
+        mode = (row["value"] if row else "7") or "7"
+        return mode if mode in HOT_WINDOW_MODES else "7"
+    finally:
+        if own:
+            conn.close()
+
+
 def compute_hot_score(conn, software_id):
-    """热度 = 0.6 × 近 7 天（τ=7） + 0.4 × 近 30 天（τ=14）"""
+    """按当前时间窗配置计算热度分并写回 software.hot_score"""
+    mode = hot_window_mode(conn)
+    parts = HOT_WINDOW_MODES.get(mode, ())
+    if not parts:
+        conn.execute("UPDATE software SET hot_score = 0 WHERE id = ?", (software_id,))
+        return 0.0
+    max_days = max(p[1] for p in parts)
     rows = conn.execute(
         "SELECT date, link_clicks, icon_clicks, focus_views, search_hits "
         "FROM software_stats WHERE software_id = ? AND date >= ?",
-        (software_id, (date.today() - timedelta(days=30)).isoformat()),
+        (software_id, (date.today() - timedelta(days=max_days)).isoformat()),
     ).fetchall()
-    score = 0.6 * _decayed_sum(rows, 7, 7.0) + 0.4 * _decayed_sum(rows, 30, 14.0)
+    score = 0.0
+    for weight, days, tau in parts:
+        score += weight * _decayed_sum(rows, days, tau)
     conn.execute("UPDATE software SET hot_score = ? WHERE id = ?", (round(score, 6), software_id))
     return score
 
@@ -196,7 +234,99 @@ def recompute_all_hot(conn):
         compute_hot_score(conn, row["id"])
 
 
-def record_event(body):
+def _event_throttled(ip, key):
+    """同一 IP + 同一目标 10 秒内只计一次"""
+    if not ip:
+        return False
+    composite = ip + "|" + key
+    now = time.time()
+    with _EVENT_THROTTLE_LOCK:
+        if len(_EVENT_THROTTLE) > _EVENT_THROTTLE_MAX:
+            cutoff = now - 60
+            for k in [k for k, v in _EVENT_THROTTLE.items() if v < cutoff]:
+                _EVENT_THROTTLE.pop(k, None)
+        last = _EVENT_THROTTLE.get(composite)
+        if last is not None and (now - last) < EVENT_THROTTLE_SECONDS:
+            return True
+        _EVENT_THROTTLE[composite] = now
+        return False
+
+
+def hot_overview():
+    """热门榜：Top 10 软件 + 搜索词 Top 20 + 近 7 天趋势"""
+    conn = connect()
+    try:
+        mode = hot_window_mode(conn)
+        top = conn.execute(
+            "SELECT id, name, logo, hot_score FROM software "
+            "ORDER BY hot_score DESC, id DESC LIMIT 10"
+        ).fetchall()
+        since = (date.today() - timedelta(days=29)).isoformat()
+        searches = conn.execute(
+            "SELECT term, SUM(hits) AS hits FROM search_terms WHERE date >= ? "
+            "GROUP BY term ORDER BY hits DESC, term ASC LIMIT 20",
+            (since,),
+        ).fetchall()
+
+        trend_days = []
+        today = date.today()
+        for offset in range(6, -1, -1):
+            trend_days.append((today - timedelta(days=offset)).isoformat())
+        stats = {}
+        for row in conn.execute(
+            "SELECT date, SUM(link_clicks) AS lc, SUM(icon_clicks) AS ic, "
+            "SUM(focus_views) AS fv, SUM(search_hits) AS sh "
+            "FROM software_stats WHERE date >= ? GROUP BY date",
+            (trend_days[0],),
+        ).fetchall():
+            stats[row["date"]] = row
+        terms = {}
+        for row in conn.execute(
+            "SELECT date, SUM(hits) AS hits FROM search_terms WHERE date >= ? GROUP BY date",
+            (trend_days[0],),
+        ).fetchall():
+            terms[row["date"]] = row["hits"]
+
+        trend = []
+        for day in trend_days:
+            row = stats.get(day)
+            link_clicks = row["lc"] if row else 0
+            icon_clicks = row["ic"] if row else 0
+            focus_views = row["fv"] if row else 0
+            search_hits = row["sh"] if row else 0
+            total = link_clicks + icon_clicks + focus_views + search_hits
+            trend.append(
+                {
+                    "date": day,
+                    "link_clicks": link_clicks,
+                    "icon_clicks": icon_clicks,
+                    "focus_views": focus_views,
+                    "search_hits": search_hits,
+                    "search_terms": terms.get(day, 0),
+                    "total": total,
+                }
+            )
+
+        return {
+            "window": mode,
+            "items": [
+                {
+                    "id": r["id"],
+                    "name": r["name"],
+                    "logo": r["logo"],
+                    "hot_score": round(r["hot_score"] or 0, 3),
+                }
+                for r in top
+            ],
+            "searches": [{"term": r["term"], "hits": r["hits"]} for r in searches],
+            "trend": trend,
+            "total_events": sum(t["total"] for t in trend),
+        }
+    finally:
+        conn.close()
+
+
+def record_event(body, ip=""):
     """记录一次前端行为；写原始事件 + 当天汇总 + 刷新该软件热度分"""
     event_type = (body.get("type") or "").strip()
     if event_type not in EVENT_TYPES:
@@ -217,6 +347,8 @@ def record_event(body):
         if event_type == "search":
             if not keyword:
                 return {"ok": True}
+            if _event_throttled(ip, "search:" + keyword.lower()):
+                return {"ok": True, "throttled": True}
             conn.execute(
                 "INSERT INTO events (type, keyword) VALUES (?, ?)", (event_type, keyword)
             )
@@ -242,6 +374,8 @@ def record_event(body):
                 "SELECT 1 FROM software WHERE id = ?", (software_id,)
             ).fetchone():
                 return {"ok": True}
+            if _event_throttled(ip, "%s:%s:%s" % (event_type, software_id, field)):
+                return {"ok": True, "throttled": True}
             conn.execute(
                 "INSERT INTO events (type, software_id, field) VALUES (?, ?, ?)",
                 (event_type, software_id, field),
@@ -544,6 +678,10 @@ def update_settings(body):
                 (key, str(value)[:500]),
             )
         conn.commit()
+        # 时间窗改了要按新窗口重算全部热度
+        if "hot_window" in body:
+            recompute_all_hot(conn)
+            conn.commit()
     finally:
         conn.close()
     return get_settings()
@@ -853,6 +991,8 @@ def list_software(query):
     sort = query.get("sort", ["default"])[0]
     platform = (query.get("platform", [""])[0] or "").strip()
     license_key = (query.get("license", [""])[0] or "").strip()
+    if sort == "hot" and hot_window_mode() == "off":
+        sort = "default"  # 关闭热门统计时，按默认排序兜底
     order_by = SORT_OPTIONS.get(sort, SORT_OPTIONS["default"])
 
     where = []
@@ -1404,6 +1544,16 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError("请求数据格式不正确")
         raise ValueError("请求数据格式不正确")
 
+    def client_ip(self):
+        """取客户端 IP：优先反向代理头，其次直连地址（只用于 10 秒防刷，不落库）"""
+        forwarded = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+        if forwarded:
+            return forwarded
+        try:
+            return self.client_address[0]
+        except (IndexError, TypeError):
+            return ""
+
     def send_file(self, path: Path):
         if not path.is_file():
             self.send_error_json("文件不存在", 404)
@@ -1476,6 +1626,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(list_categories())
             if path == "/api/software":
                 return self.send_json(list_software(urllib.parse.parse_qs(parsed.query)))
+            if path == "/api/hot":
+                return self.send_json(hot_overview())
             if path == "/api/settings":
                 return self.send_json(get_settings())
             if path == "/api/auth/me":
@@ -1516,7 +1668,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.clear_session_cookie()
             if path == "/api/events":
                 # 行为埋点：允许匿名浏览时也能统计；只做极轻量校验
-                return self.send_json(record_event(self.read_body()))
+                return self.send_json(record_event(self.read_body(), self.client_ip()))
 
             self.require_auth()
             if path == "/api/categories":

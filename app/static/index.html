@@ -114,6 +114,7 @@
           </label>
           <button type="button" class="btn btn-small btn-danger" id="bulkDelete" data-i18n="bulk.delete">删除</button>
         </div>
+        <button type="button" class="btn btn-small btn-ghost" id="btnHotPanel" data-i18n="hot.open">🔥 热门榜</button>
         <button type="button" class="btn btn-small btn-ghost" id="btnSelectMode" data-i18n="bulk.enter" hidden>多选</button>
         <label class="field-inline">
           <span data-i18n="content.perRow">每行显示</span>
@@ -270,6 +271,19 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
       </section>
 
       <section class="settings-section">
+        <h4 data-i18n="settings.hotSection">热门统计</h4>
+        <div class="form-item">
+          <label for="settingHotWindow" data-i18n="settings.hotWindow">统计时间窗</label>
+          <select id="settingHotWindow">
+            <option value="7" data-i18n="settings.hotWindow7">近 7 天（推荐）</option>
+            <option value="30" data-i18n="settings.hotWindow30">近 30 天</option>
+            <option value="off" data-i18n="settings.hotWindowOff">关闭热门排序</option>
+          </select>
+        </div>
+        <p class="hint-text" data-i18n="settings.hotHint">近 7 天 = 0.6×近 7 天 + 0.4×近 30 天衰减；近 30 天 = 单窗口衰减；关闭后排序里不再显示「热门排序」。</p>
+      </section>
+
+      <section class="settings-section">
         <h4 data-i18n="settings.account">账号安全</h4>
         <div class="form-item">
           <label for="accUsername" data-i18n="settings.newUsername">新用户名</label>
@@ -310,6 +324,37 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
       <div>
         <button type="button" class="btn btn-ghost" id="cancelSettings" data-i18n="settings.close">关闭</button>
         <button type="button" class="btn btn-primary" id="saveSettings" data-i18n="settings.save">保存设置</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 热门榜弹窗 -->
+<div class="modal-mask" id="hotModal" hidden>
+  <div class="modal modal-wide">
+    <div class="modal-head">
+      <h3 data-i18n="hot.title">🔥 热门榜</h3>
+      <button class="icon-btn" id="closeHot" title="关闭">×</button>
+    </div>
+    <div class="modal-body" id="hotBody">
+      <p class="hint-text" id="hotWindowHint"></p>
+      <section class="settings-section">
+        <h4 data-i18n="hot.topSoftware">热门软件 Top 10</h4>
+        <ol class="hot-list" id="hotList"></ol>
+      </section>
+      <section class="settings-section">
+        <h4 data-i18n="hot.topSearches">搜索词 Top 20</h4>
+        <div class="hot-tags" id="hotSearches"></div>
+      </section>
+      <section class="settings-section">
+        <h4 data-i18n="hot.trend">近 7 天趋势</h4>
+        <div class="hot-trend" id="hotTrend"></div>
+      </section>
+    </div>
+    <div class="modal-foot modal-foot-bar">
+      <span class="form-error" id="hotError"></span>
+      <div>
+        <button type="button" class="btn btn-ghost" id="closeHotFoot" data-i18n="settings.close">关闭</button>
       </div>
     </div>
   </div>
