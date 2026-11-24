@@ -189,6 +189,30 @@ python app/server.py
 
 默认监听 `0.0.0.0:8080`，数据写入项目下的 `data/`。
 
+## 桌面客户端（EXE）
+
+`software-hub-client.exe` 是可选的 Windows 客户端壳，**不含后端**，用来连接已经部署好的软件库服务（远端域名或局域网均可）。
+
+### 使用
+
+1. 双击 `software-hub-client.exe`，首次进入地址页；
+2. 填服务器地址：远端写 `https://你的域名`，局域网写 `192.168.1.10:8080`（不写协议会自动先试 http / https）；
+3. 点「连接并打开」，校验 `/api/health` 通过后在窗口内加载网页。
+
+- 会记住上次地址，并在地址页列出最近使用的服务器；窗口菜单「服务器 → 切换服务器」可随时回到地址页。
+- 登录仍在网页里完成：不登录也能浏览，需要增删改时再登录；登录态保存在本机 WebView2 数据目录（`%APPDATA%\SoftwareHubClient\webview`），重启客户端仍保持。
+- 支持 http 局域网地址与有效证书的 https 域名；自签名证书会被 WebView2 拦截。
+- 运行需要系统 WebView2 Runtime（Windows 10/11 通常已自带）。
+
+### 构建
+
+```powershell
+python -m pip install -r client/requirements.txt
+powershell -File client/build-client.ps1
+```
+
+产物为根目录 `software-hub-client.exe`（单文件，约 13MB）。源码在 `client/client.py`（地址校验、配置保存、窗口与菜单）和 `client/launcher.html`（地址页）。
+
 ## 配置项
 
 | 环境变量 | 默认值 | 说明 |

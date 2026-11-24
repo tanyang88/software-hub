@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>软件库客户端</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --panel-soft: #f8f9fb;
+    --text: #1f2430;
+    --text-2: #667085;
+    --border: #e2e5ea;
+    --primary: #2563eb;
+    --primary-soft: #eaf0ff;
+    --danger: #d92d20;
+    --shadow: 0 24px 60px rgba(15, 23, 42, 0.10), 0 2px 8px rgba(15, 23, 42, 0.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161b;
+      --panel: #1c1f26;
+      --panel-soft: #22262f;
+      --text: #e7e9ee;
+      --text-2: #9aa3b2;
+      --border: #2c313b;
+      --primary: #4f8cff;
+      --primary-soft: #1e2a44;
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background:
+      radial-gradient(900px 480px at 12% -8%, rgba(37, 99, 235, 0.12), transparent 60%),
+      radial-gradient(700px 420px at 96% 112%, rgba(37, 99, 235, 0.10), transparent 62%),
+      var(--bg);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+  .shell { width: min(560px, 100%); animation: rise .45s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+  .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+  .brand-mark {
+    width: 48px; height: 48px; border-radius: 14px; flex: 0 0 auto;
+    background: linear-gradient(145deg, #3b7bff, #2154d8);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, .28);
+  }
+  .brand-mark svg { width: 26px; height: 26px; fill: #fff; }
+  .brand-text h1 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: .2px; }
+  .brand-text p { margin: 4px 0 0; font-size: 13px; color: var(--text-2); }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 26px 26px 22px;
+  }
+  .label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .field { position: relative; }
+  .field svg {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    width: 17px; height: 17px; fill: var(--text-2); pointer-events: none;
+  }
+  input[type="text"] {
+    width: 100%; height: 46px; padding: 0 14px 0 40px;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--panel-soft); color: var(--text);
+    font-size: 14px; outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  }
+  input[type="text"]::placeholder { color: var(--text-2); opacity: .8; }
+  input[type="text"]:focus {
+    border-color: var(--primary);
+    background: var(--panel);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+  }
+  .hint { margin: 9px 2px 0; font-size: 12.5px; color: var(--text-2); line-height: 1.6; }
+
+  .recent { margin-top: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .recent:empty { display: none; }
+  .recent-label { font-size: 12px; color: var(--text-2); }
+  .chip {
+    border: 1px solid var(--border); background: var(--panel-soft); color: var(--text-2);
+    border-radius: 999px; padding: 5px 11px; font-size: 12px; cursor: pointer;
+    max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  .chip:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+
+  .error {
+    min-height: 20px; margin-top: 14px; font-size: 13px; line-height: 1.5;
+    color: var(--danger); word-break: break-word;
+  }
+  .error:empty { display: none; }
+
+  .actions { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+  .btn {
+    height: 46px; border: none; border-radius: 12px; padding: 0 22px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: transform .12s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn-primary {
+    flex: 1 1 auto; color: #fff; background: linear-gradient(180deg, #3574f6, #2563eb);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, .26);
+  }
+  .btn-primary:hover:not(:disabled) { background: linear-gradient(180deg, #2f6cf0, #1f57d6); }
+  .btn-primary:active:not(:disabled) { transform: translateY(1px); }
+  .btn:disabled { opacity: .65; cursor: default; box-shadow: none; }
+  .spinner {
+    width: 15px; height: 15px; border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .45); border-top-color: #fff;
+    animation: spin .8s linear infinite;
+  }
+  .spinner[hidden] { display: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status { font-size: 12.5px; color: var(--text-2); min-height: 18px; }
+  .status.ok { color: #12805c; }
+
+  .foot {
+    margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; gap: 12px;
+    font-size: 12px; color: var(--text-2); line-height: 1.6;
+  }
+  .foot code { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px; }
+  .version { flex: 0 0 auto; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M4 5.6c0-1.2 1-2.1 2.1-2.1h4.3c1.1 0 2 .7 2.3 1.7l.5 1.5H19c1.1 0 2 .9 2 2v8.1c0 1.2-1 2.2-2.2 2.2H5.2C4 17 3 16 3 14.8V5.6zm2 1.4v8c0 .3.2.4.4.4h13.2V9.4H9.4l-.5-1.4c-.1-.5-.5-.9-1-.9H6z"/></svg>
+    </span>
+    <div class="brand-text">
+      <h1>软件库客户端</h1>
+      <p>连接你的服务器，打开专属软件收藏</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form id="form" autocomplete="off">
+      <label class="label" for="server">服务器地址</label>
+      <div class="field">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a8 8 0 0 0-8 8c0 5.7 7.1 11.5 7.4 11.7a1 1 0 0 0 1.2 0C11 21.5 20 15.7 20 10a8 8 0 0 0-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+        <input id="server" type="text" spellcheck="false"
+               placeholder="https://你的域名 或 192.168.1.10:8080">
+      </div>
+      <p class="hint">远端部署用 https 域名；局域网可直接填 IP 加端口。不写 http/https 时会自动探测。</p>
+
+      <div class="recent" id="recent"></div>
+      <p class="error" id="error"></p>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="submit" type="submit">
+          <span class="spinner" id="spinner" hidden></span>
+          <span id="submitText">连接并打开</span>
+        </button>
+      </div>
+      <p class="status" id="status"></p>
+    </form>
+
+    <div class="foot">
+      <span>登录在网页内进行，不登录也能浏览；上传数据时再登录即可。</span>
+      <span class="version" id="version">v1.0</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = (s) => document.querySelector(s);
+  let api = null;
+  let booted = false;
+  window.__errs = [];
+  window.addEventListener('error', (e) => window.__errs.push(String(e.message || e)));
+
+  function setBusy(busy, text) {
+    $('#submit').disabled = busy;
+    $('#spinner').hidden = !busy;
+    $('#submitText').textContent = busy ? '正在连接…' : '连接并打开';
+    if (busy) {
+      $('#error').textContent = '';
+      $('#status').className = 'status';
+      $('#status').textContent = text || '正在检测服务器…';
+    }
+  }
+
+  function renderState(state) {
+    if (!state) return;
+    $('#server').value = state.lastUrl || '';
+    $('#version').textContent = 'v' + (state.version || '');
+    const box = $('#recent');
+    box.innerHTML = '';
+    const recent = (state.recent || []).filter((u) => u !== state.lastUrl).slice(0, 4);
+    if (!recent.length) return;
+    const label = document.createElement('span');
+    label.className = 'recent-label';
+    label.textContent = '最近使用';
+    box.appendChild(label);
+    recent.forEach((url) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.title = url;
+      chip.textContent = url.replace(/^https?:\/\//, '');
+      chip.addEventListener('click', () => {
+        $('#server').value = url;
+        $('#server').focus();
+      });
+      box.appendChild(chip);
+    });
+  }
+
+  async function connect(event) {
+    event.preventDefault();
+    if (!api) return;
+    const raw = $('#server').value.trim();
+    if (!raw) {
+      $('#error').textContent = '请填写服务器地址';
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await api.connect(raw);
+      if (!result || !result.ok) {
+        $('#error').textContent = (result && result.error) || '连接失败';
+        setBusy(false);
+        return;
+      }
+      $('#status').className = 'status ok';
+      $('#status').textContent = '已连接：' + result.base;
+      $('#server').value = result.base;
+      await api.open(result.base);
+    } catch (err) {
+      $('#error').textContent = '连接失败：' + (err && err.message ? err.message : err);
+      setBusy(false);
+    }
+  }
+
+  function boot() {
+    if (booted) return;
+    api = window.pywebview && window.pywebview.api ? window.pywebview.api : null;
+    // api 对象会先以空壳注入，等 connect 等方法真正挂上再初始化
+    if (!api || typeof api.connect !== 'function') {
+      api = null;
+      return;
+    }
+    booted = true;
+    window.__booted = true;
+    api.state().then(renderState).catch((err) => {
+      window.__errs.push('state: ' + (err && err.message ? err.message : err));
+    });
+    $('#form').addEventListener('submit', connect);
+    $('#server').focus();
+  }
+
+  if (window.pywebview && window.pywebview.api) {
+    boot();
+  }
+  window.addEventListener('pywebviewready', boot);
+  // 兜底轮询：等 API 方法真正就绪（空壳对象会先出现）
+  let tries = 0;
+  const timer = setInterval(() => {
+    tries += 1;
+    if (booted) {
+      clearInterval(timer);
+    } else if (window.pywebview && window.pywebview.api && typeof window.pywebview.api.connect === 'function') {
+      clearInterval(timer);
+      boot();
+      return;
+    }
+    if (tries > 80) clearInterval(timer);
+  }, 100);
+</script>
+</body>
+</html>

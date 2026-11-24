@@ -5,3 +5,7 @@ __pycache__/
 *.log
 software-hub-docker.zip
 software-hub-docker/
+build/
+dist/
+*.spec
+software-hub-client.exe
