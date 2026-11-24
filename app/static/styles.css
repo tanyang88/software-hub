@@ -718,7 +718,8 @@ button, input, textarea, select { font-family: inherit; }
 
 .card-sep { margin: 0 6px; color: var(--text-secondary); }
 
-.card-downloads .no-download { color: var(--text-muted); }
+.card-downloads a { color: var(--accent); }
+
 
 .card-actions {
   position: absolute;
@@ -953,19 +954,26 @@ button, input, textarea, select { font-family: inherit; }
   margin-top: 8px;
 }
 
-/* 链接类输入行统一用同一套网格：名称 / 链接 / 显示文字 / 删除按钮位，
-   这样四个固定链接与其他链接两种行左右边界与列宽完全对齐 */
+/* 链接类输入行统一用同一套网格：手柄位 / 名称 / 链接 / 显示文字 / 删除按钮位，
+   这样固定链接、其他链接、下载地址三块的左右边界与列宽完全对齐 */
 .three-row,
 .extra-row {
   display: grid;
-  grid-template-columns: 22% minmax(0, 1fr) 24% 58px;
+  grid-template-columns: 20px 22% minmax(0, 1fr) 24% 58px;
   gap: 8px;
   align-items: center;
+}
+.three-row::before {
+  content: '';
+  display: block;
+  width: 20px;
+  height: 28px;
 }
 .three-row input,
 .extra-row input { width: 100%; min-width: 0; }
 .three-row .row-spacer { display: block; }
 .extra-row .rm { justify-self: start; }
+.extra-row.dragging { opacity: 0.55; }
 
 /* 下载地址保持改造前的两输入框形态：左侧拖曳手柄 + 名称占 34% + 链接自适应 */
 .download-row {

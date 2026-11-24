@@ -24,8 +24,8 @@
       'btn.settings': '设置',
       'btn.logout': '退出登录',
       'btn.addSoftware': '＋ 添加软件',
-      'sidebar.title': '软件分类',
-      'sidebar.all': '全部软件',
+      'sidebar.title': '分类',
+      'sidebar.all': '全部',
       'sidebar.newCategory': '新分类名称',
       'sidebar.add': '添加',
       'sidebar.uncategorized': '未分类',
@@ -122,7 +122,6 @@
       'card.download': '📥 下载地址：',
       'card.viewRelease': '查看版本更新',
       'card.viewDocs': '查看文档',
-      'card.noDownload': '暂未提供',
       'modal.addTitle': '添加软件',
       'modal.editTitle': '编辑软件',
       'form.name': '软件名称',
@@ -149,7 +148,7 @@
       'form.labelDefaultDoc': '📖 官方文档',
       'form.downloads': '下载地址',
       'form.extraLinks': '其他链接',
-      'form.extraHint': '（左：名称，中：链接，右：链接显示文字，留空显示链接；可添加多条）',
+      'form.extraHint': '（左：名称，中：链接，右：链接显示文字，留空显示链接；可添加多条；按住左侧手柄可拖曳排序）',
       'form.addExtraLink': '＋ 添加一条链接',
       'form.extraEmpty': '还没有其他链接',
       'form.exText': '名称，例如：镜像下载',
@@ -208,7 +207,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.2.3',
+      'settings.aboutVersion': '当前版本：2.2.4',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -260,7 +259,7 @@
       'btn.logout': 'Sign out',
       'btn.addSoftware': '＋ Add software',
       'sidebar.title': 'Categories',
-      'sidebar.all': 'All software',
+      'sidebar.all': 'All',
       'sidebar.newCategory': 'New category',
       'sidebar.add': 'Add',
       'sidebar.uncategorized': 'Uncategorized',
@@ -357,7 +356,6 @@
       'card.download': '📥 Downloads: ',
       'card.viewRelease': 'View releases',
       'card.viewDocs': 'View docs',
-      'card.noDownload': 'Not provided',
       'modal.addTitle': 'Add software',
       'modal.editTitle': 'Edit software',
       'form.name': 'Name',
@@ -384,7 +382,7 @@
       'form.labelDefaultDoc': '📖 Docs',
       'form.downloads': 'Downloads',
       'form.extraLinks': 'Other links',
-      'form.extraHint': ' (left: name, middle: URL, right: link text; empty shows the URL; add as many as you like)',
+      'form.extraHint': ' (left: name, middle: URL, right: link text; empty shows the URL; drag the left handle to reorder)',
       'form.addExtraLink': '＋ Add link',
       'form.extraEmpty': 'No extra links yet',
       'form.exText': 'Name, e.g. Mirror download',
@@ -443,7 +441,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.2.3',
+      'settings.aboutVersion': 'Current version: 2.2.4',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -1282,11 +1280,11 @@
 
   function downloadsLine(downloads) {
     const list = (downloads || []).filter((d) => d && d.text && safeHref(d.link));
-    const body = list.length
-      ? list
-          .map((d) => `<a href="${escapeHtml(safeHref(d.link))}" target="_blank" rel="noopener noreferrer" data-hit="downloads">${escapeHtml(d.text)}</a>`)
-          .join('<span class="card-sep">|</span>')
-      : `<span class="no-download">${escapeHtml(t('card.noDownload'))}</span>`;
+    // 没有任何有效条目时整行不渲染
+    if (!list.length) return '';
+    const body = list
+      .map((d) => `<a href="${escapeHtml(safeHref(d.link))}" target="_blank" rel="noopener noreferrer" data-hit="downloads">${escapeHtml(d.text)}</a>`)
+      .join('<span class="card-sep">|</span>');
     return `
       <div class="card-line card-downloads">
         <span class="label">${escapeHtml(t('card.download'))}</span>
@@ -1775,12 +1773,36 @@
     els.extraLinkRows.innerHTML = state.modalExtraLinks
       .map((row, i) => `
         <div class="extra-row" data-index="${i}">
+          <button type="button" class="drag-handle" data-drag="${i}" title="${escapeHtml(t('form.dragHint'))}" aria-label="${escapeHtml(t('form.dragHint'))}">
+            <svg viewBox="0 0 10 16" width="10" height="16" aria-hidden="true" focusable="false">
+              <circle cx="2.5" cy="3" r="1.3"></circle><circle cx="7.5" cy="3" r="1.3"></circle>
+              <circle cx="2.5" cy="8" r="1.3"></circle><circle cx="7.5" cy="8" r="1.3"></circle>
+              <circle cx="2.5" cy="13" r="1.3"></circle><circle cx="7.5" cy="13" r="1.3"></circle>
+            </svg>
+          </button>
           <input type="text" class="ex-text" value="${escapeHtml(row.text || '')}" placeholder="${escapeHtml(t('form.exText'))}">
           <input type="text" class="ex-link" value="${escapeHtml(row.link || '')}" placeholder="${escapeHtml(t('form.exLink'))}">
           <input type="text" class="ex-label" value="${escapeHtml(row.label || '')}" placeholder="${escapeHtml(t('form.exLabel'))}">
           <button type="button" class="btn btn-small btn-ghost rm" data-erm="${i}">${escapeHtml(t('form.rm'))}</button>
         </div>`)
       .join('');
+  }
+
+  function syncExtraOrder() {
+    const rows = Array.from(els.extraLinkRows.querySelectorAll('.extra-row'));
+    state.modalExtraLinks = rows.map((row) => ({
+      text: row.querySelector('.ex-text').value.trim(),
+      link: row.querySelector('.ex-link').value.trim(),
+      label: row.querySelector('.ex-label').value.trim(),
+    }));
+    rows.forEach((row, i) => {
+      row.dataset.index = String(i);
+      const handle = row.querySelector('.drag-handle');
+      if (handle) handle.dataset.drag = String(i);
+      const rm = row.querySelector('[data-erm]');
+      if (rm) rm.dataset.erm = String(i);
+    });
+    return state.modalExtraLinks;
   }
 
   function collectExtraLinks() {
@@ -2479,54 +2501,59 @@
   });
 
   // 下载地址行拖曳排序：按住左侧手柄才能拖动整行，避免影响输入框选字
-  let draggingDownloadRow = null;
-  els.downloadRows.addEventListener('mousedown', (event) => {
-    const handle = event.target.closest('.drag-handle');
-    if (!handle) return;
-    const row = handle.closest('.download-row');
-    if (!row) return;
-    row.draggable = true;
-    // 没真正拖起来时（鼠标松开）自动收回 draggable，避免之后整行误拖
-    const release = () => {
-      document.removeEventListener('mouseup', release);
-      if (!draggingDownloadRow) row.draggable = false;
+  function enableRowDrag(container, rowSelector, onSorted) {
+    let dragging = null;
+    container.addEventListener('mousedown', (event) => {
+      const handle = event.target.closest('.drag-handle');
+      if (!handle) return;
+      const row = handle.closest(rowSelector);
+      if (!row) return;
+      row.draggable = true;
+      // 没真正拖起来时（鼠标松开）自动收回 draggable，避免之后整行误拖
+      const release = () => {
+        document.removeEventListener('mouseup', release);
+        if (!dragging) row.draggable = false;
+      };
+      document.addEventListener('mouseup', release);
+    });
+    container.addEventListener('dragstart', (event) => {
+      const row = event.target.closest(rowSelector);
+      if (!row) return;
+      dragging = row;
+      row.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      try { event.dataTransfer.setData('text/plain', row.dataset.index || ''); } catch (err) { /* 忽略 */ }
+    });
+    container.addEventListener('dragover', (event) => {
+      if (!dragging) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      const target = event.target.closest(rowSelector);
+      if (!target || target === dragging) return;
+      const box = target.getBoundingClientRect();
+      const after = event.clientY > box.top + box.height / 2;
+      container.insertBefore(dragging, after ? target.nextSibling : target);
+    });
+    const endDrag = () => {
+      if (!dragging) return;
+      dragging.classList.remove('dragging');
+      dragging.draggable = false;
+      dragging = null;
+      onSorted();
     };
-    document.addEventListener('mouseup', release);
-  });
-  els.downloadRows.addEventListener('dragstart', (event) => {
-    const row = event.target.closest('.download-row');
-    if (!row) return;
-    draggingDownloadRow = row;
-    row.classList.add('dragging');
-    event.dataTransfer.effectAllowed = 'move';
-    try { event.dataTransfer.setData('text/plain', row.dataset.index || ''); } catch (err) { /* 忽略 */ }
-  });
-  els.downloadRows.addEventListener('dragover', (event) => {
-    if (!draggingDownloadRow) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    const target = event.target.closest('.download-row');
-    if (!target || target === draggingDownloadRow) return;
-    const box = target.getBoundingClientRect();
-    const after = event.clientY > box.top + box.height / 2;
-    els.downloadRows.insertBefore(draggingDownloadRow, after ? target.nextSibling : target);
-  });
-  const endDownloadDrag = () => {
-    if (!draggingDownloadRow) return;
-    draggingDownloadRow.classList.remove('dragging');
-    draggingDownloadRow.draggable = false;
-    draggingDownloadRow = null;
-    syncDownloadOrder();
-  };
-  els.downloadRows.addEventListener('dragend', endDownloadDrag);
-  els.downloadRows.addEventListener('drop', (event) => {
-    if (!draggingDownloadRow) return;
-    event.preventDefault();
-    endDownloadDrag();
-  });
+    container.addEventListener('dragend', endDrag);
+    container.addEventListener('drop', (event) => {
+      if (!dragging) return;
+      event.preventDefault();
+      endDrag();
+    });
+  }
+
+  enableRowDrag(els.downloadRows, '.download-row', syncDownloadOrder);
+  enableRowDrag(els.extraLinkRows, '.extra-row', syncExtraOrder);
 
   $('#addExtraLink').addEventListener('click', () => {
-    state.modalExtraLinks = collectExtraLinks();
+    state.modalExtraLinks = syncExtraOrder() || [];
     state.modalExtraLinks.push({ text: '', link: '' });
     renderExtraRows();
     const inputs = els.extraLinkRows.querySelectorAll('.ex-text');
@@ -2536,7 +2563,7 @@
   els.extraLinkRows.addEventListener('click', (event) => {
     const rm = event.target.closest('[data-erm]');
     if (!rm) return;
-    state.modalExtraLinks = collectExtraLinks();
+    state.modalExtraLinks = syncExtraOrder() || [];
     state.modalExtraLinks.splice(Number(rm.dataset.erm), 1);
     renderExtraRows();
   });

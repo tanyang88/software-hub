@@ -9,7 +9,7 @@
 <link rel="icon" href="/static/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#2563eb">
-<link rel="stylesheet" href="/static/styles.css">
+<link rel="stylesheet" href="/static/styles.css?v=2.2.4">
 </head>
 <body>
 <header class="topbar">
@@ -63,7 +63,7 @@
   <div class="sidebar-col">
   <aside class="sidebar">
     <div class="sidebar-head">
-      <span data-i18n="sidebar.title">软件分类</span>
+      <span data-i18n="sidebar.title">分类</span>
       <span class="sidebar-total" id="allCount"></span>
     </div>
     <nav class="category-list" id="categoryList"></nav>
@@ -103,7 +103,7 @@
   <main class="content">
     <div class="content-head">
       <div class="content-title">
-        <h2 id="currentCategory">全部软件</h2>
+        <h2 id="currentCategory">全部</h2>
         <span class="muted" id="countInfo"></span>
       </div>
       <div class="content-tools">
@@ -334,7 +334,7 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
 
       <section class="settings-section">
         <h4 data-i18n="settings.about">关于</h4>
-        <p class="about-version" data-i18n="settings.aboutVersion">当前版本：2.2.3</p>
+        <p class="about-version" data-i18n="settings.aboutVersion">当前版本：2.2.4</p>
       </section>
 
     </div>
@@ -450,7 +450,7 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
       </div>
 
       <div class="form-item">
-        <label><span data-i18n="form.extraLinks">其他链接</span><span class="muted small" data-i18n="form.extraHint">（左：名称，中：链接，右：显示文字，留空显示链接；可添加多条）</span></label>
+        <label><span data-i18n="form.extraLinks">其他链接</span><span class="muted small" data-i18n="form.extraHint">（左：名称，中：链接，右：链接显示文字，留空显示链接；可添加多条；按住左侧手柄可拖曳排序）</span></label>
         <div class="extra-links" id="extraLinkRows"></div>
         <button type="button" class="btn btn-small btn-ghost" id="addExtraLink" data-i18n="form.addExtraLink">＋ 添加一条链接</button>
       </div>
@@ -546,6 +546,6 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
 
 <div class="toast" id="toast"></div>
 
-<script src="/static/app.js"></script>
+<script src="/static/app.js?v=2.2.4"></script>
 </body>
 </html>
