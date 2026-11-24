@@ -129,6 +129,12 @@
       'form.release': '版本更新链接',
       'form.doc': '文档链接',
       'form.downloads': '下载地址',
+      'form.extraLinks': '其他链接',
+      'form.extraHint': '（左侧填名称、右侧填链接，可添加多条）',
+      'form.addExtraLink': '＋ 添加一条链接',
+      'form.extraEmpty': '还没有其他链接',
+      'form.exText': '名称，例如：镜像下载',
+      'form.exLink': 'https://...',
       'form.licenses': '授权方式',
       'form.downloadEmpty': '暂无下载条目，点下方按钮添加',
       'form.addDownload': '＋ 添加一条下载',
@@ -327,6 +333,12 @@
       'form.release': 'Release URL',
       'form.doc': 'Docs URL',
       'form.downloads': 'Downloads',
+      'form.extraLinks': 'Other links',
+      'form.extraHint': ' (name on the left, URL on the right; add as many as you like)',
+      'form.addExtraLink': '＋ Add link',
+      'form.extraEmpty': 'No extra links yet',
+      'form.exText': 'Name, e.g. Mirror download',
+      'form.exLink': 'https://...',
       'form.licenses': 'License',
       'form.downloadEmpty': 'No entries yet. Add one below.',
       'form.addDownload': '＋ Add download',
@@ -448,6 +460,7 @@
     selectMode: false,
     selected: new Set(),
     modalDownloads: [],
+    modalExtraLinks: [],
     modalLogo: '',
     modalCardColor: '',
     user: '',
@@ -488,6 +501,7 @@
     logoUrl: $('#logoUrl'),
     logoFile: $('#logoFile'),
     downloadRows: $('#downloadRows'),
+    extraLinkRows: $('#extraLinkRows'),
     toast: $('#toast'),
     btnLogin: $('#btnLogin'),
     btnSettings: $('#btnSettings'),
@@ -1059,6 +1073,18 @@
       </div>`;
   }
 
+  // 自定义链接：每条一行「名称 ：链接」，紧跟在「文档链接」下方
+  function extraLinksHtml(links) {
+    return (links || [])
+      .filter((l) => l && l.text && safeHref(l.link))
+      .map((l) => `
+      <div class="card-line">
+        <span class="label">${escapeHtml(l.text)}：</span>
+        <a href="${escapeHtml(safeHref(l.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.link)}</a>
+      </div>`)
+      .join('');
+  }
+
   function contrastText(color) {
     const hex = String(color || '').replace('#', '');
     let r; let g; let b;
@@ -1132,6 +1158,7 @@
             ${linkRow('card.github', item.url_github)}
             ${linkRow('card.release', item.url_release, 'card.viewRelease')}
             ${linkRow('card.docs', item.url_doc, 'card.viewDocs')}
+            ${extraLinksHtml(item.extra_links)}
           </div>
           ${platformsLine(item.platforms)}
           ${licenseLine(item.licenses)}
@@ -1492,6 +1519,28 @@
     }));
   }
 
+  function renderExtraRows() {
+    if (!state.modalExtraLinks.length) {
+      els.extraLinkRows.innerHTML = `<div class="hint-text">${escapeHtml(t('form.extraEmpty'))}</div>`;
+      return;
+    }
+    els.extraLinkRows.innerHTML = state.modalExtraLinks
+      .map((row, i) => `
+        <div class="extra-row" data-index="${i}">
+          <input type="text" class="ex-text" value="${escapeHtml(row.text || '')}" placeholder="${escapeHtml(t('form.exText'))}">
+          <input type="text" class="ex-link" value="${escapeHtml(row.link || '')}" placeholder="${escapeHtml(t('form.exLink'))}">
+          <button type="button" class="btn btn-small btn-ghost rm" data-erm="${i}">${escapeHtml(t('form.rm'))}</button>
+        </div>`)
+      .join('');
+  }
+
+  function collectExtraLinks() {
+    return Array.from(els.extraLinkRows.querySelectorAll('.extra-row')).map((row) => ({
+      text: row.querySelector('.ex-text').value.trim(),
+      link: row.querySelector('.ex-link').value.trim(),
+    })).filter((row) => row.text && row.link);
+  }
+
   function openModal(item = null) {
     if (!state.user) {
       openLogin();
@@ -1501,6 +1550,7 @@
     state.editingId = item ? item.id : null;
     state.modalLogo = item ? item.logo || '' : '';
     state.modalDownloads = item ? (item.downloads || []).map((d) => ({ ...d })) : [];
+    state.modalExtraLinks = item ? (item.extra_links || []).map((d) => ({ ...d })) : [];
     state.modalCardColor = item ? item.card_color || '' : '';
     els.cardColorText.value = state.modalCardColor;
     syncColorPicker(state.modalCardColor);
@@ -1535,6 +1585,7 @@
     });
 
     renderDownloadRows();
+    renderExtraRows();
     updateLogoPreview();
     els.modal.hidden = false;
   }
@@ -1576,6 +1627,7 @@
       url_release: els.form.querySelector('[name="url_release"]').value.trim(),
       url_doc: els.form.querySelector('[name="url_doc"]').value.trim(),
       downloads: collectDownloads(),
+      extra_links: collectExtraLinks(),
       platforms: {},
       licenses: [],
       card_color: (els.cardColorText.value || '').trim(),
@@ -2147,6 +2199,22 @@
     state.modalDownloads = collectDownloads();
     state.modalDownloads.splice(Number(rm.dataset.rm), 1);
     renderDownloadRows();
+  });
+
+  $('#addExtraLink').addEventListener('click', () => {
+    state.modalExtraLinks = collectExtraLinks();
+    state.modalExtraLinks.push({ text: '', link: '' });
+    renderExtraRows();
+    const inputs = els.extraLinkRows.querySelectorAll('.ex-text');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  });
+
+  els.extraLinkRows.addEventListener('click', (event) => {
+    const rm = event.target.closest('[data-erm]');
+    if (!rm) return;
+    state.modalExtraLinks = collectExtraLinks();
+    state.modalExtraLinks.splice(Number(rm.dataset.erm), 1);
+    renderExtraRows();
   });
 
   // ---------------- 启动 ----------------

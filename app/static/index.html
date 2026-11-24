@@ -376,6 +376,12 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
       </div>
 
       <div class="form-item">
+        <label><span data-i18n="form.extraLinks">其他链接</span><span class="muted small" data-i18n="form.extraHint">（左侧填名称、右侧填链接，可添加多条）</span></label>
+        <div class="extra-links" id="extraLinkRows"></div>
+        <button type="button" class="btn btn-small btn-ghost" id="addExtraLink" data-i18n="form.addExtraLink">＋ 添加一条链接</button>
+      </div>
+
+      <div class="form-item">
         <label data-i18n="form.platforms">支持系统</label>
         <div class="platforms">
           <label><input type="checkbox" name="platform" value="windows"> Windows</label>

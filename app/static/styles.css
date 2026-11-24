@@ -945,8 +945,9 @@ button, input, textarea, select { font-family: inherit; }
 .downloads { display: flex; flex-direction: column; gap: 8px; margin-bottom: 0; }
 .downloads .hint-text { margin: 0; }
 
-/* 「＋ 添加一条下载」与上方输入框保持 8px 等距 */
-#addDownload {
+/* 「＋ 添加一条下载」「＋ 添加一条链接」与上方输入框保持 8px 等距 */
+#addDownload,
+#addExtraLink {
   display: inline-flex;
   align-items: center;
   margin-top: 8px;
@@ -956,6 +957,14 @@ button, input, textarea, select { font-family: inherit; }
 .download-row input { flex: 1; }
 .download-row input.dl-text { flex: 0 0 34%; }
 .download-row .rm { flex: 0 0 auto; }
+
+/* 其他链接：沿用下载行的排版，输入框与上方表单等宽对齐 */
+.extra-links { display: flex; flex-direction: column; gap: 8px; }
+.extra-links .hint-text { margin: 0; }
+.extra-row { display: flex; gap: 8px; align-items: center; }
+.extra-row input { flex: 1; min-width: 0; }
+.extra-row input.ex-text { flex: 0 0 34%; }
+.extra-row .rm { flex: 0 0 auto; }
 
 .platforms { display: flex; flex-wrap: wrap; gap: 8px 18px; }
 

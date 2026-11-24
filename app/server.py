@@ -152,6 +152,7 @@ def init_db():
                 downloads TEXT NOT NULL DEFAULT '[]',
                 platforms TEXT NOT NULL DEFAULT '{}',
                 licenses TEXT NOT NULL DEFAULT '[]',
+                extra_links TEXT NOT NULL DEFAULT '[]',
                 pinned INTEGER NOT NULL DEFAULT 0,
                 card_color TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
@@ -212,6 +213,10 @@ def init_db():
         if "name_sort" not in columns:
             conn.execute("ALTER TABLE software ADD COLUMN name_sort TEXT NOT NULL DEFAULT ''")
             columns.append("name_sort")
+        # 兼容旧库：卡片自定义链接（名称 + 链接，存 JSON 数组）
+        if "extra_links" not in columns:
+            conn.execute("ALTER TABLE software ADD COLUMN extra_links TEXT NOT NULL DEFAULT '[]'")
+            columns.append("extra_links")
         pending = conn.execute("SELECT id, name FROM software WHERE name_sort = ''").fetchall()
         for r in pending:
             conn.execute(
@@ -282,6 +287,7 @@ def migrate_to_multi_categories(conn):
                 downloads TEXT NOT NULL DEFAULT '[]',
                 platforms TEXT NOT NULL DEFAULT '{}',
                 licenses TEXT NOT NULL DEFAULT '[]',
+                extra_links TEXT NOT NULL DEFAULT '[]',
                 pinned INTEGER NOT NULL DEFAULT 0,
                 card_color TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
@@ -466,6 +472,7 @@ def row_software(row):
         "url_release": row["url_release"],
         "url_doc": row["url_doc"],
         "downloads": json.loads(row["downloads"] or "[]"),
+        "extra_links": json.loads(row["extra_links"] or "[]") if "extra_links" in row.keys() else [],
         "platforms": json.loads(row["platforms"] or "{}"),
         "licenses": json.loads(row["licenses"] or "[]") if "licenses" in row.keys() else [],
         "pinned": bool(row["pinned"]) if "pinned" in row.keys() else False,
@@ -565,6 +572,19 @@ def parse_software_payload(body, conn):
         if text and link:
             clean_downloads.append({"text": text, "link": link})
 
+    # 其他链接：自定义名称 + 链接，可多条
+    extra_links = body.get("extra_links") or []
+    if not isinstance(extra_links, list):
+        raise ValueError("其他链接格式不正确")
+    clean_extra_links = []
+    for item in extra_links:
+        if not isinstance(item, dict):
+            continue
+        text = (item.get("text") or "").strip()[:30]
+        link = (item.get("link") or "").strip()
+        if text and link:
+            clean_extra_links.append({"text": text, "link": link})
+
     platforms = body.get("platforms") or {}
     if not isinstance(platforms, dict):
         platforms = {}
@@ -596,6 +616,7 @@ def parse_software_payload(body, conn):
         "url_release": text("url_release"),
         "url_doc": text("url_doc"),
         "downloads": clean_downloads,
+        "extra_links": clean_extra_links,
         "platforms": clean_platforms,
         "licenses": clean_licenses,
         "card_color": card_color,
@@ -703,8 +724,8 @@ def create_software(body):
         cur = conn.execute(
             """INSERT INTO software
                (name, name_sort, description, logo, url_home, url_github, url_release,
-                url_doc, downloads, platforms, licenses, card_color, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))""",
+                url_doc, downloads, extra_links, platforms, licenses, card_color, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))""",
             (
                 values["name"],
                 pinyin.key(values["name"]),
@@ -715,6 +736,7 @@ def create_software(body):
                 values["url_release"],
                 values["url_doc"],
                 json.dumps(values["downloads"], ensure_ascii=False),
+                json.dumps(values["extra_links"], ensure_ascii=False),
                 json.dumps(values["platforms"], ensure_ascii=False),
                 json.dumps(values["licenses"], ensure_ascii=False),
                 values["card_color"],
@@ -736,7 +758,7 @@ def update_software(software_id, body):
         conn.execute(
             """UPDATE software SET name = ?, name_sort = ?, description = ?, logo = ?,
                url_home = ?, url_github = ?, url_release = ?, url_doc = ?,
-               downloads = ?, platforms = ?, licenses = ?, card_color = ?,
+               downloads = ?, extra_links = ?, platforms = ?, licenses = ?, card_color = ?,
                updated_at = datetime('now', 'localtime')
                WHERE id = ?""",
             (
@@ -749,6 +771,7 @@ def update_software(software_id, body):
                 values["url_release"],
                 values["url_doc"],
                 json.dumps(values["downloads"], ensure_ascii=False),
+                json.dumps(values["extra_links"], ensure_ascii=False),
                 json.dumps(values["platforms"], ensure_ascii=False),
                 json.dumps(values["licenses"], ensure_ascii=False),
                 values["card_color"],
