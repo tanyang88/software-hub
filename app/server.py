@@ -153,6 +153,14 @@ def init_db():
                 platforms TEXT NOT NULL DEFAULT '{}',
                 licenses TEXT NOT NULL DEFAULT '[]',
                 extra_links TEXT NOT NULL DEFAULT '[]',
+                url_home_label TEXT NOT NULL DEFAULT '',
+                url_home_text TEXT NOT NULL DEFAULT '',
+                url_github_label TEXT NOT NULL DEFAULT '',
+                url_github_text TEXT NOT NULL DEFAULT '',
+                url_release_label TEXT NOT NULL DEFAULT '',
+                url_release_text TEXT NOT NULL DEFAULT '',
+                url_doc_label TEXT NOT NULL DEFAULT '',
+                url_doc_text TEXT NOT NULL DEFAULT '',
                 pinned INTEGER NOT NULL DEFAULT 0,
                 card_color TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
@@ -217,6 +225,15 @@ def init_db():
         if "extra_links" not in columns:
             conn.execute("ALTER TABLE software ADD COLUMN extra_links TEXT NOT NULL DEFAULT '[]'")
             columns.append("extra_links")
+        # 兼容旧库：四个固定链接的自定义名称 / 显示文字
+        for key in ("url_home", "url_github", "url_release", "url_doc"):
+            for suffix in ("label", "text"):
+                column = f"{key}_{suffix}"
+                if column not in columns:
+                    conn.execute(
+                        f"ALTER TABLE software ADD COLUMN {column} TEXT NOT NULL DEFAULT ''"
+                    )
+                    columns.append(column)
         pending = conn.execute("SELECT id, name FROM software WHERE name_sort = ''").fetchall()
         for r in pending:
             conn.execute(
@@ -288,6 +305,14 @@ def migrate_to_multi_categories(conn):
                 platforms TEXT NOT NULL DEFAULT '{}',
                 licenses TEXT NOT NULL DEFAULT '[]',
                 extra_links TEXT NOT NULL DEFAULT '[]',
+                url_home_label TEXT NOT NULL DEFAULT '',
+                url_home_text TEXT NOT NULL DEFAULT '',
+                url_github_label TEXT NOT NULL DEFAULT '',
+                url_github_text TEXT NOT NULL DEFAULT '',
+                url_release_label TEXT NOT NULL DEFAULT '',
+                url_release_text TEXT NOT NULL DEFAULT '',
+                url_doc_label TEXT NOT NULL DEFAULT '',
+                url_doc_text TEXT NOT NULL DEFAULT '',
                 pinned INTEGER NOT NULL DEFAULT 0,
                 card_color TEXT NOT NULL DEFAULT '',
                 created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
@@ -473,6 +498,14 @@ def row_software(row):
         "url_doc": row["url_doc"],
         "downloads": json.loads(row["downloads"] or "[]"),
         "extra_links": json.loads(row["extra_links"] or "[]") if "extra_links" in row.keys() else [],
+        "url_home_label": row["url_home_label"] if "url_home_label" in row.keys() else "",
+        "url_home_text": row["url_home_text"] if "url_home_text" in row.keys() else "",
+        "url_github_label": row["url_github_label"] if "url_github_label" in row.keys() else "",
+        "url_github_text": row["url_github_text"] if "url_github_text" in row.keys() else "",
+        "url_release_label": row["url_release_label"] if "url_release_label" in row.keys() else "",
+        "url_release_text": row["url_release_text"] if "url_release_text" in row.keys() else "",
+        "url_doc_label": row["url_doc_label"] if "url_doc_label" in row.keys() else "",
+        "url_doc_text": row["url_doc_text"] if "url_doc_text" in row.keys() else "",
         "platforms": json.loads(row["platforms"] or "{}"),
         "licenses": json.loads(row["licenses"] or "[]") if "licenses" in row.keys() else [],
         "pinned": bool(row["pinned"]) if "pinned" in row.keys() else False,
@@ -569,8 +602,12 @@ def parse_software_payload(body, conn):
             continue
         text = (item.get("text") or "").strip()
         link = (item.get("link") or "").strip()
+        label = (item.get("label") or "").strip()[:60]
         if text and link:
-            clean_downloads.append({"text": text, "link": link})
+            row = {"text": text, "link": link}
+            if label:
+                row["label"] = label
+            clean_downloads.append(row)
 
     # 其他链接：自定义名称 + 链接，可多条
     extra_links = body.get("extra_links") or []
@@ -582,8 +619,12 @@ def parse_software_payload(body, conn):
             continue
         text = (item.get("text") or "").strip()[:30]
         link = (item.get("link") or "").strip()
+        label = (item.get("label") or "").strip()[:60]
         if text and link:
-            clean_extra_links.append({"text": text, "link": link})
+            row = {"text": text, "link": link}
+            if label:
+                row["label"] = label
+            clean_extra_links.append(row)
 
     platforms = body.get("platforms") or {}
     if not isinstance(platforms, dict):
@@ -615,6 +656,14 @@ def parse_software_payload(body, conn):
         "url_github": text("url_github"),
         "url_release": text("url_release"),
         "url_doc": text("url_doc"),
+        "url_home_label": text("url_home_label")[:30],
+        "url_home_text": text("url_home_text")[:60],
+        "url_github_label": text("url_github_label")[:30],
+        "url_github_text": text("url_github_text")[:60],
+        "url_release_label": text("url_release_label")[:30],
+        "url_release_text": text("url_release_text")[:60],
+        "url_doc_label": text("url_doc_label")[:30],
+        "url_doc_text": text("url_doc_text")[:60],
         "downloads": clean_downloads,
         "extra_links": clean_extra_links,
         "platforms": clean_platforms,
@@ -724,8 +773,12 @@ def create_software(body):
         cur = conn.execute(
             """INSERT INTO software
                (name, name_sort, description, logo, url_home, url_github, url_release,
-                url_doc, downloads, extra_links, platforms, licenses, card_color, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))""",
+                url_doc, downloads, extra_links, platforms, licenses, card_color,
+                url_home_label, url_home_text, url_github_label, url_github_text,
+                url_release_label, url_release_text, url_doc_label, url_doc_text,
+                updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                       datetime('now', 'localtime'))""",
             (
                 values["name"],
                 pinyin.key(values["name"]),
@@ -740,6 +793,14 @@ def create_software(body):
                 json.dumps(values["platforms"], ensure_ascii=False),
                 json.dumps(values["licenses"], ensure_ascii=False),
                 values["card_color"],
+                values["url_home_label"],
+                values["url_home_text"],
+                values["url_github_label"],
+                values["url_github_text"],
+                values["url_release_label"],
+                values["url_release_text"],
+                values["url_doc_label"],
+                values["url_doc_text"],
             ),
         )
         save_category_links(conn, cur.lastrowid, values["category_ids"])
@@ -759,6 +820,8 @@ def update_software(software_id, body):
             """UPDATE software SET name = ?, name_sort = ?, description = ?, logo = ?,
                url_home = ?, url_github = ?, url_release = ?, url_doc = ?,
                downloads = ?, extra_links = ?, platforms = ?, licenses = ?, card_color = ?,
+               url_home_label = ?, url_home_text = ?, url_github_label = ?, url_github_text = ?,
+               url_release_label = ?, url_release_text = ?, url_doc_label = ?, url_doc_text = ?,
                updated_at = datetime('now', 'localtime')
                WHERE id = ?""",
             (
@@ -775,6 +838,14 @@ def update_software(software_id, body):
                 json.dumps(values["platforms"], ensure_ascii=False),
                 json.dumps(values["licenses"], ensure_ascii=False),
                 values["card_color"],
+                values["url_home_label"],
+                values["url_home_text"],
+                values["url_github_label"],
+                values["url_github_text"],
+                values["url_release_label"],
+                values["url_release_text"],
+                values["url_doc_label"],
+                values["url_doc_text"],
                 software_id,
             ),
         )

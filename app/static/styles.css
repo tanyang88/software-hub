@@ -953,18 +953,29 @@ button, input, textarea, select { font-family: inherit; }
   margin-top: 8px;
 }
 
-.download-row { display: flex; gap: 8px; align-items: center; }
-.download-row input { flex: 1; }
-.download-row input.dl-text { flex: 0 0 34%; }
-.download-row .rm { flex: 0 0 auto; }
+/* 链接类输入行统一用同一套网格：名称 / 链接 / 显示文字 / 删除按钮位，
+   这样四个固定链接、其他链接、下载地址三种行左右边界与列宽完全对齐 */
+.three-row,
+.extra-row,
+.download-row {
+  display: grid;
+  grid-template-columns: 22% minmax(0, 1fr) 24% 58px;
+  gap: 8px;
+  align-items: center;
+}
+.three-row input,
+.extra-row input,
+.download-row input { width: 100%; min-width: 0; }
+.three-row .row-spacer { display: block; }
+.extra-row .rm,
+.download-row .rm { justify-self: start; }
 
 /* 其他链接：沿用下载行的排版，输入框与上方表单等宽对齐 */
 .extra-links { display: flex; flex-direction: column; gap: 8px; }
 .extra-links .hint-text { margin: 0; }
-.extra-row { display: flex; gap: 8px; align-items: center; }
-.extra-row input { flex: 1; min-width: 0; }
-.extra-row input.ex-text { flex: 0 0 34%; }
-.extra-row .rm { flex: 0 0 auto; }
+
+/* 四个固定链接：名称 / 链接 / 显示文字 三列 */
+.link-rows { display: flex; flex-direction: column; gap: 8px; }
 
 .platforms { display: flex; flex-wrap: wrap; gap: 8px 18px; }
 

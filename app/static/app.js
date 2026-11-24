@@ -128,6 +128,13 @@
       'form.github': 'GitHub 链接',
       'form.release': '版本更新链接',
       'form.doc': '文档链接',
+      'form.linkText': '显示文字（留空显示链接）',
+      'form.linksHead': '链接',
+      'form.linksHint': '（左：卡片显示名称，中：链接地址，右：链接显示文字，留空则显示链接本身）',
+      'form.labelDefaultHome': '🌐 官方网站',
+      'form.labelDefaultGithub': '🌐 GitHub 地址',
+      'form.labelDefaultRelease': '📌 版本更新',
+      'form.labelDefaultDoc': '📖 官方文档',
       'form.downloads': '下载地址',
       'form.extraLinks': '其他链接',
       'form.extraHint': '（左侧填名称、右侧填链接，可添加多条）',
@@ -135,11 +142,13 @@
       'form.extraEmpty': '还没有其他链接',
       'form.exText': '名称，例如：镜像下载',
       'form.exLink': 'https://...',
+      'form.exLabel': '显示文字（留空显示链接）',
       'form.licenses': '授权方式',
       'form.downloadEmpty': '暂无下载条目，点下方按钮添加',
       'form.addDownload': '＋ 添加一条下载',
-      'form.dlText': '显示文字，如：Windows 版',
+      'form.dlText': '名称，如：Windows 版',
       'form.dlLink': '下载链接，如：https://xxx.exe',
+      'form.dlLabel': '显示文字（留空显示名称）',
       'form.rm': '移除',
       'form.platforms': '支持系统',
       'form.cardColor': '卡片背景色',
@@ -332,6 +341,13 @@
       'form.github': 'GitHub URL',
       'form.release': 'Release URL',
       'form.doc': 'Docs URL',
+      'form.linkText': 'Display text (empty = show URL)',
+      'form.linksHead': 'Links',
+      'form.linksHint': ' (left: name shown on the card, middle: URL, right: display text; leave empty to show the URL itself)',
+      'form.labelDefaultHome': '🌐 Website',
+      'form.labelDefaultGithub': '🌐 GitHub',
+      'form.labelDefaultRelease': '📌 Releases',
+      'form.labelDefaultDoc': '📖 Docs',
       'form.downloads': 'Downloads',
       'form.extraLinks': 'Other links',
       'form.extraHint': ' (name on the left, URL on the right; add as many as you like)',
@@ -339,11 +355,13 @@
       'form.extraEmpty': 'No extra links yet',
       'form.exText': 'Name, e.g. Mirror download',
       'form.exLink': 'https://...',
+      'form.exLabel': 'Display text (empty = show URL)',
       'form.licenses': 'License',
       'form.downloadEmpty': 'No entries yet. Add one below.',
       'form.addDownload': '＋ Add download',
-      'form.dlText': 'Label, e.g. Windows',
+      'form.dlText': 'Name, e.g. Windows build',
       'form.dlLink': 'Link, e.g. https://...',
+      'form.dlLabel': 'Display text (empty = show name)',
       'form.rm': 'Remove',
       'form.platforms': 'Platforms',
       'form.cardColor': 'Card background',
@@ -1026,13 +1044,15 @@
     return `<div class="logo-fallback">${letter}</div>`;
   }
 
-  function linkRow(labelKey, url, textKey) {
+  function linkRow(labelKey, url, textKey, customLabel, customText) {
     const href = safeHref(url);
     if (!href) return '';
+    const label = (customLabel || '').trim();
+    const text = (customText || '').trim() || (textKey ? t(textKey) : href);
     return `
       <div class="card-line">
-        <span class="label">${escapeHtml(t(labelKey))}</span>
-        <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(textKey ? t(textKey) : href)}</a>
+        <span class="label">${label ? `${escapeHtml(label)}：` : escapeHtml(t(labelKey))}</span>
+        <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>
       </div>`;
   }
 
@@ -1063,7 +1083,7 @@
     const list = (downloads || []).filter((d) => d && d.text && safeHref(d.link));
     const body = list.length
       ? list
-          .map((d) => `<a href="${escapeHtml(safeHref(d.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml(d.text)}</a>`)
+          .map((d) => `<a href="${escapeHtml(safeHref(d.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml((d.label || '').trim() || d.text)}</a>`)
           .join('<span class="card-sep">|</span>')
       : `<span class="no-download">${escapeHtml(t('card.noDownload'))}</span>`;
     return `
@@ -1080,7 +1100,7 @@
       .map((l) => `
       <div class="card-line">
         <span class="label">${escapeHtml(l.text)}：</span>
-        <a href="${escapeHtml(safeHref(l.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.link)}</a>
+        <a href="${escapeHtml(safeHref(l.link))}" target="_blank" rel="noopener noreferrer">${escapeHtml((l.label || '').trim() || l.link)}</a>
       </div>`)
       .join('');
   }
@@ -1154,10 +1174,10 @@
             ${item.description ? `<div class="card-desc">${renderMarkdown(item.description)}</div>` : ''}
           </div>
           <div class="card-links">
-            ${linkRow('card.website', item.url_home)}
-            ${linkRow('card.github', item.url_github)}
-            ${linkRow('card.release', item.url_release, 'card.viewRelease')}
-            ${linkRow('card.docs', item.url_doc, 'card.viewDocs')}
+            ${linkRow('card.website', item.url_home, null, item.url_home_label, item.url_home_text)}
+            ${linkRow('card.github', item.url_github, null, item.url_github_label, item.url_github_text)}
+            ${linkRow('card.release', item.url_release, null, item.url_release_label, item.url_release_text)}
+            ${linkRow('card.docs', item.url_doc, null, item.url_doc_label, item.url_doc_text)}
             ${extraLinksHtml(item.extra_links)}
           </div>
           ${platformsLine(item.platforms)}
@@ -1507,6 +1527,7 @@
         <div class="download-row" data-index="${i}">
           <input type="text" class="dl-text" value="${escapeHtml(row.text)}" placeholder="${escapeHtml(t('form.dlText'))}">
           <input type="text" class="dl-link" value="${escapeHtml(row.link)}" placeholder="${escapeHtml(t('form.dlLink'))}">
+          <input type="text" class="dl-label" value="${escapeHtml(row.label || '')}" placeholder="${escapeHtml(t('form.dlLabel'))}">
           <button type="button" class="btn btn-small btn-ghost rm" data-rm="${i}">${escapeHtml(t('form.rm'))}</button>
         </div>`)
       .join('');
@@ -1516,6 +1537,7 @@
     return Array.from(els.downloadRows.querySelectorAll('.download-row')).map((row) => ({
       text: row.querySelector('.dl-text').value.trim(),
       link: row.querySelector('.dl-link').value.trim(),
+      label: row.querySelector('.dl-label').value.trim(),
     }));
   }
 
@@ -1529,6 +1551,7 @@
         <div class="extra-row" data-index="${i}">
           <input type="text" class="ex-text" value="${escapeHtml(row.text || '')}" placeholder="${escapeHtml(t('form.exText'))}">
           <input type="text" class="ex-link" value="${escapeHtml(row.link || '')}" placeholder="${escapeHtml(t('form.exLink'))}">
+          <input type="text" class="ex-label" value="${escapeHtml(row.label || '')}" placeholder="${escapeHtml(t('form.exLabel'))}">
           <button type="button" class="btn btn-small btn-ghost rm" data-erm="${i}">${escapeHtml(t('form.rm'))}</button>
         </div>`)
       .join('');
@@ -1538,6 +1561,7 @@
     return Array.from(els.extraLinkRows.querySelectorAll('.extra-row')).map((row) => ({
       text: row.querySelector('.ex-text').value.trim(),
       link: row.querySelector('.ex-link').value.trim(),
+      label: row.querySelector('.ex-label').value.trim(),
     })).filter((row) => row.text && row.link);
   }
 
@@ -1560,10 +1584,11 @@
     els.form.reset();
     els.form.querySelector('[name="name"]').value = item ? item.name : '';
     els.form.querySelector('[name="description"]').value = item ? item.description || '' : '';
-    els.form.querySelector('[name="url_home"]').value = item ? item.url_home || '' : '';
-    els.form.querySelector('[name="url_github"]').value = item ? item.url_github || '' : '';
-    els.form.querySelector('[name="url_release"]').value = item ? item.url_release || '' : '';
-    els.form.querySelector('[name="url_doc"]').value = item ? item.url_doc || '' : '';
+    ['url_home', 'url_github', 'url_release', 'url_doc'].forEach((key) => {
+      els.form.querySelector(`[name="${key}"]`).value = (item && item[key]) || '';
+      els.form.querySelector(`[name="${key}_label"]`).value = (item && item[`${key}_label`]) || '';
+      els.form.querySelector(`[name="${key}_text"]`).value = (item && item[`${key}_text`]) || '';
+    });
     els.logoUrl.value = state.modalLogo;
 
     refreshFormCategories();
@@ -1626,6 +1651,14 @@
       url_github: els.form.querySelector('[name="url_github"]').value.trim(),
       url_release: els.form.querySelector('[name="url_release"]').value.trim(),
       url_doc: els.form.querySelector('[name="url_doc"]').value.trim(),
+      url_home_label: els.form.querySelector('[name="url_home_label"]').value.trim(),
+      url_home_text: els.form.querySelector('[name="url_home_text"]').value.trim(),
+      url_github_label: els.form.querySelector('[name="url_github_label"]').value.trim(),
+      url_github_text: els.form.querySelector('[name="url_github_text"]').value.trim(),
+      url_release_label: els.form.querySelector('[name="url_release_label"]').value.trim(),
+      url_release_text: els.form.querySelector('[name="url_release_text"]').value.trim(),
+      url_doc_label: els.form.querySelector('[name="url_doc_label"]').value.trim(),
+      url_doc_text: els.form.querySelector('[name="url_doc_text"]').value.trim(),
       downloads: collectDownloads(),
       extra_links: collectExtraLinks(),
       platforms: {},

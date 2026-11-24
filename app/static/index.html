@@ -354,29 +354,38 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-item">
-          <label data-i18n="form.home">官网链接</label>
-          <input type="text" name="url_home" placeholder="https://www.xxx.com">
-        </div>
-        <div class="form-item">
-          <label data-i18n="form.github">GitHub 链接</label>
-          <input type="text" name="url_github" placeholder="https://github.com/xxx/xxx">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-item">
-          <label data-i18n="form.release">版本更新链接</label>
-          <input type="text" name="url_release" placeholder="https://xxx.com/releases">
-        </div>
-        <div class="form-item">
-          <label data-i18n="form.doc">文档链接</label>
-          <input type="text" name="url_doc" placeholder="https://xxx.com/docs">
+      <div class="form-item">
+        <label><span data-i18n="form.linksHead">链接</span><span class="muted small" data-i18n="form.linksHint">（左：卡片显示名称，中：链接地址，右：链接显示文字，留空则显示链接本身）</span></label>
+        <div class="link-rows">
+          <div class="three-row">
+            <input type="text" name="url_home_label" maxlength="30" placeholder="🌐 官方网站" data-i18n-ph="form.labelDefaultHome">
+            <input type="text" name="url_home" placeholder="https://www.xxx.com">
+            <input type="text" name="url_home_text" maxlength="60" placeholder="显示文字（留空显示链接）" data-i18n-ph="form.linkText">
+            <span class="row-spacer"></span>
+          </div>
+          <div class="three-row">
+            <input type="text" name="url_github_label" maxlength="30" placeholder="🌐 GitHub 地址" data-i18n-ph="form.labelDefaultGithub">
+            <input type="text" name="url_github" placeholder="https://github.com/xxx/xxx">
+            <input type="text" name="url_github_text" maxlength="60" placeholder="显示文字（留空显示链接）" data-i18n-ph="form.linkText">
+            <span class="row-spacer"></span>
+          </div>
+          <div class="three-row">
+            <input type="text" name="url_release_label" maxlength="30" placeholder="📌 版本更新" data-i18n-ph="form.labelDefaultRelease">
+            <input type="text" name="url_release" placeholder="https://xxx.com/releases">
+            <input type="text" name="url_release_text" maxlength="60" placeholder="显示文字（留空显示链接）" data-i18n-ph="form.linkText">
+            <span class="row-spacer"></span>
+          </div>
+          <div class="three-row">
+            <input type="text" name="url_doc_label" maxlength="30" placeholder="📖 官方文档" data-i18n-ph="form.labelDefaultDoc">
+            <input type="text" name="url_doc" placeholder="https://xxx.com/docs">
+            <input type="text" name="url_doc_text" maxlength="60" placeholder="显示文字（留空显示链接）" data-i18n-ph="form.linkText">
+            <span class="row-spacer"></span>
+          </div>
         </div>
       </div>
 
       <div class="form-item">
-        <label><span data-i18n="form.extraLinks">其他链接</span><span class="muted small" data-i18n="form.extraHint">（左侧填名称、右侧填链接，可添加多条）</span></label>
+        <label><span data-i18n="form.extraLinks">其他链接</span><span class="muted small" data-i18n="form.extraHint">（左：名称，中：链接，右：显示文字，留空显示链接；可添加多条）</span></label>
         <div class="extra-links" id="extraLinkRows"></div>
         <button type="button" class="btn btn-small btn-ghost" id="addExtraLink" data-i18n="form.addExtraLink">＋ 添加一条链接</button>
       </div>
