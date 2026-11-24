@@ -436,7 +436,7 @@ button, input, textarea, select { font-family: inherit; }
 .content-tools {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 10px;
   flex-wrap: wrap;
   margin-left: auto;
 }
@@ -1438,7 +1438,7 @@ button, input, textarea, select { font-family: inherit; }
   .search-box { flex: 1 1 auto; width: auto; min-width: 0; }
   .topbar-actions { flex-shrink: 0; }
   .card-grid[data-cols="icon"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .content-tools { gap: 12px 16px; }
+  .content-tools { gap: 10px; }
 }
 
 /* ---------------- 热门榜 ---------------- */
