@@ -1605,8 +1605,10 @@ button, input, textarea, select { font-family: inherit; }
 
 .switch-line {
   display: flex;
+  width: 100%;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 13px;
   color: var(--text-secondary);
   cursor: pointer;
