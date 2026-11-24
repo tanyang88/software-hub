@@ -203,11 +203,12 @@
       'settings.hotWindow7': '近 7 天（推荐）',
       'settings.hotWindow30': '近 30 天',
       'settings.hotWindowOff': '关闭热门排序',
+      'settings.hotBoard': '显示热门榜',
       'settings.hotHint': '近 7 天 = 0.6×近 7 天 + 0.4×近 30 天衰减；近 30 天 = 单窗口衰减；关闭后排序里不再显示「热门排序」。',
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.2.2',
+      'settings.aboutVersion': '当前版本：2.2.3',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -437,11 +438,12 @@
       'settings.hotWindow7': 'Last 7 days (recommended)',
       'settings.hotWindow30': 'Last 30 days',
       'settings.hotWindowOff': 'Turn off popular sorting',
+      'settings.hotBoard': 'Show popular board',
       'settings.hotHint': '7 days = 0.6 × last 7 days + 0.4 × last 30 days (decayed); 30 days = single decayed window; off hides the Popular sort option.',
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.2.2',
+      'settings.aboutVersion': 'Current version: 2.2.3',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -864,6 +866,13 @@
         els.sortSelect.value = 'default';
       }
     }
+
+    // 关闭「显示热门榜」时隐藏顶部操作栏的热门榜入口
+    const boardOn = settings.hot_board !== '0';
+    els.btnHotPanel.hidden = !boardOn;
+    if (!boardOn && !els.hotModal.hidden) {
+      els.hotModal.hidden = true;
+    }
   }
 
   async function loadSettings() {
@@ -878,6 +887,7 @@
       ? 'off'
       : (settings.hot_window === '30' ? '30' : '7');
     $('#settingSearchHighlight').checked = settings.search_highlight !== '0';
+    $('#settingHotBoard').checked = settings.hot_board !== '0';
     state.siteIconDraft = settings.site_icon || '';
     updateSiteIconPreview();
   }
@@ -965,6 +975,7 @@
       site_icon: $('#settingSiteIcon').value.trim(),
       language: $('#settingLanguage').value,
       hot_window: $('#settingHotWindow').value,
+      hot_board: $('#settingHotBoard').checked ? '1' : '0',
       search_highlight: $('#settingSearchHighlight').checked ? '1' : '0',
     };
     if (!payload.site_name) {
