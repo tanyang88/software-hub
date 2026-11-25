@@ -18,9 +18,11 @@
     padding-right: 10px;
   }
 
-  /* 顶栏：品牌紧凑，搜索与操作分成两行，操作区可横向滑动 */
+  /* 顶栏：第一行品牌 + 搜索，第二行操作按钮横向滑动 */
   .topbar-inner {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
     gap: 8px;
     padding-top: 8px;
     padding-bottom: 8px;
@@ -32,18 +34,19 @@
   }
   .brand h1 { font-size: 15px; }
   .brand p { display: none; }
-  .topbar-tools {
-    width: 100%;
-    flex-wrap: nowrap;
-    gap: 6px;
-  }
+  .topbar-tools { display: contents; }
   .search-box {
-    flex: 1 1 auto;
-    width: auto;
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
     min-width: 0;
   }
   .search-box input { height: 40px; }
   .topbar-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    justify-content: flex-start;
     gap: 6px;
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -54,12 +57,11 @@
   .topbar-actions::-webkit-scrollbar { display: none; }
   .topbar-actions .btn {
     flex: 0 0 auto;
-    padding: 9px 12px;
-    font-size: 13px;
+    padding: 8px 10px;
+    font-size: 12.5px;
   }
   .topbar-actions .user-name {
-    flex: 0 0 auto;
-    max-width: 96px;
+    display: none;
   }
   .theme-toggle { flex: 0 0 auto; margin-left: 0; }
   .theme-toggle button { width: 30px; height: 30px; }
@@ -171,6 +173,8 @@
     gap: 12px;
     border-radius: 12px;
   }
+  /* 触屏上操作按钮常显，顶部留出一条操作栏位置，避免压住标题 */
+  .card:not(.card-compact) { padding-top: 42px; }
   .card-logo {
     flex: 0 0 72px;
     width: 72px;
@@ -248,18 +252,13 @@
   }
 }
 
-/* 窄屏手机：筛选改成单列，顶栏按钮更紧凑 */
+/* 窄屏手机：卡片进一步收窄 */
 @media (max-width: 400px) {
-  .sidebar-col { grid-template-columns: minmax(0, 1fr); }
-  .side-box {
-    flex-direction: row;
-    align-items: center;
-  }
-  .side-box-label { flex: 0 0 auto; }
   .card {
     padding: 10px;
     gap: 10px;
   }
+  .card:not(.card-compact) { padding-top: 42px; }
   .card-logo {
     flex: 0 0 60px;
     width: 60px;
@@ -332,12 +331,21 @@
   }
   .three-row input,
   .extra-row input,
-  .download-row input {
+  .download-row input,
+  .three-row > .clearable-field,
+  .extra-row > .clearable-field,
+  .download-row > .clearable-field {
     grid-column: 2;
+    min-width: 0;
   }
-  .three-row .row-spacer { display: none; }
-  .extra-row .rm,
-  .download-row .rm {
+  .three-row > .row-spacer { display: none; }
+  /* 固定链接行没有拖曳手柄，去掉左侧空列，输入框与上方字段对齐 */
+  .three-row { grid-template-columns: minmax(0, 1fr); }
+  .three-row::before { display: none; }
+  .three-row > .clearable-field,
+  .three-row > input { grid-column: 1; }
+  .extra-row > .rm,
+  .download-row > .rm {
     grid-column: 2;
     justify-self: end;
   }
