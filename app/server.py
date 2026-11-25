@@ -57,6 +57,8 @@ DEFAULT_SETTINGS = {
     "hot_window": "7",  # 热门统计时间窗：7 / 30 / off（关闭热门排序）
     "hot_board": "1",  # 是否在顶部操作栏显示热门榜入口：1 / 0
     "search_highlight": "1",  # 搜索结果是否高亮关键词：1 / 0
+    "login_max_fail": "0",  # 连续登录失败次数上限，0 表示不限制
+    "login_lock_minutes": "0",  # 达到上限后的锁定时长（分钟），0 表示不限制
 }
 
 CONTENT_TYPES = {
@@ -452,6 +454,8 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL,
+                failed_attempts INTEGER NOT NULL DEFAULT 0,
+                locked_until INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
             );
 
@@ -463,6 +467,17 @@ def init_db():
             );
             """
         )
+
+        # 兼容旧库：登录防护所需的失败计数与锁定截止时间
+        user_columns = [r["name"] for r in conn.execute("PRAGMA table_info(users)").fetchall()]
+        if "failed_attempts" not in user_columns:
+            conn.execute(
+                "ALTER TABLE users ADD COLUMN failed_attempts INTEGER NOT NULL DEFAULT 0"
+            )
+        if "locked_until" not in user_columns:
+            conn.execute(
+                "ALTER TABLE users ADD COLUMN locked_until INTEGER NOT NULL DEFAULT 0"
+            )
 
         # 兼容旧库：补 updated_at 字段
         columns = [r["name"] for r in conn.execute("PRAGMA table_info(software)").fetchall()]
@@ -684,6 +699,17 @@ def update_settings(body):
         if "hot_window" in body:
             recompute_all_hot(conn)
             conn.commit()
+        # 关闭登录防护时，同步清除所有历史失败计数与锁定状态
+        if "login_max_fail" in body or "login_lock_minutes" in body:
+            stored = dict(conn.execute("SELECT key, value FROM settings").fetchall())
+            try:
+                max_fail = int(float(body.get("login_max_fail", stored.get("login_max_fail", 0)) or 0))
+                lock_minutes = int(float(body.get("login_lock_minutes", stored.get("login_lock_minutes", 0)) or 0))
+            except (TypeError, ValueError):
+                max_fail, lock_minutes = 0, 0
+            if max_fail <= 0 or lock_minutes <= 0:
+                conn.execute("UPDATE users SET failed_attempts = 0, locked_until = 0")
+                conn.commit()
     finally:
         conn.close()
     return get_settings()
@@ -696,6 +722,69 @@ def find_user(username):
     conn = connect()
     try:
         return conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+    finally:
+        conn.close()
+
+
+def login_guard_config():
+    settings = get_settings()
+
+    def as_int(key):
+        try:
+            return max(0, int(float(settings.get(key) or 0)))
+        except (TypeError, ValueError):
+            return 0
+
+    return as_int("login_max_fail"), as_int("login_lock_minutes")
+
+
+def login_lock_seconds(user):
+    """返回该账户剩余锁定秒数；未启用登录防护或未锁定时返回 0。"""
+    max_fail, lock_minutes = login_guard_config()
+    if not user or max_fail <= 0 or lock_minutes <= 0:
+        return 0
+    try:
+        locked_until = int(user["locked_until"] or 0)
+    except (KeyError, TypeError, ValueError):
+        locked_until = 0
+    return max(0, locked_until - int(time.time()))
+
+
+def register_login_failure(user):
+    """记录一次失败；达到阈值时锁定账户并返回锁定秒数，否则返回 0。"""
+    max_fail, lock_minutes = login_guard_config()
+    if not user or max_fail <= 0 or lock_minutes <= 0:
+        return 0
+    conn = connect()
+    try:
+        conn.execute(
+            "UPDATE users SET failed_attempts = failed_attempts + 1 WHERE id = ?",
+            (user["id"],),
+        )
+        row = conn.execute(
+            "SELECT failed_attempts FROM users WHERE id = ?", (user["id"],)
+        ).fetchone()
+        if row and int(row["failed_attempts"] or 0) >= max_fail:
+            conn.execute(
+                "UPDATE users SET failed_attempts = 0, locked_until = ? WHERE id = ?",
+                (int(time.time()) + lock_minutes * 60, user["id"]),
+            )
+            conn.commit()
+            return lock_minutes * 60
+        conn.commit()
+    finally:
+        conn.close()
+    return 0
+
+
+def clear_login_failures(user_id):
+    conn = connect()
+    try:
+        conn.execute(
+            "UPDATE users SET failed_attempts = 0, locked_until = 0 WHERE id = ?",
+            (user_id,),
+        )
+        conn.commit()
     finally:
         conn.close()
 
@@ -1690,8 +1779,17 @@ class Handler(BaseHTTPRequestHandler):
                 body = self.read_body()
                 username = (body.get("username") or "").strip()
                 user = find_user(username)
+                locked = login_lock_seconds(user)
+                if locked:
+                    minutes = max(1, math.ceil(locked / 60))
+                    raise ValueError(f"登录失败次数过多，账户已锁定，请约 {minutes} 分钟后再试")
                 if not user or not verify_password(body.get("password") or "", user["password_hash"]):
+                    locked = register_login_failure(user)
+                    if locked:
+                        minutes = max(1, math.ceil(locked / 60))
+                        raise ValueError(f"登录失败次数过多，账户已锁定 {minutes} 分钟")
                     raise ValueError("用户名或密码错误")
+                clear_login_failures(user["id"])
                 token, hours = create_session(user["id"], bool(body.get("remember")))
                 return self.set_session_cookie(token, hours)
             if path == "/api/auth/logout":

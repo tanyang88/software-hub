@@ -935,7 +935,16 @@ button, input, textarea, select { font-family: inherit; }
 .logo-preview img { max-width: 66px; max-height: 66px; object-fit: contain; }
 
 .logo-fields { flex: 1; min-width: 0; }
-.logo-actions { display: flex; gap: 8px; margin-top: 8px; }
+.logo-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+
+/* 「上传本地图片」是 label，会被 .form-item label 改成 block，这里恢复成与按钮一致的高度 */
+.form-item .logo-actions .file-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0;
+  line-height: 1.2;
+}
 
 .file-btn { position: relative; }
 .file-btn input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
@@ -1367,6 +1376,36 @@ button, input, textarea, select { font-family: inherit; }
 
 .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* 登录防护：两个数字输入 + 独立保存 */
+.login-guard-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-guard-row input[type="number"] {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  font-size: 14px;
+  color: var(--text);
+  background: #fbfcfe;
+  outline: none;
+  transition: border-color .14s ease, background .14s ease;
+}
+
+.login-guard-row input[type="number"]:focus {
+  border-color: var(--primary);
+  background: #fff;
+}
+
+.login-guard-row .btn { height: 40px; }
+.login-guard-row .btn:hover { background: #e4e8ef; }
+
 .hint-text {
   margin: 0 0 8px;
   font-size: 12.5px;
@@ -1433,6 +1472,7 @@ button, input, textarea, select { font-family: inherit; }
 [data-theme="dark"] .side-box select,
 [data-theme="dark"] .category-add input,
 [data-theme="dark"] .confirm-input input,
+[data-theme="dark"] .login-guard-row input[type="number"],
 [data-theme="dark"] .logo-preview,
 [data-theme="dark"] .modal {
   background: #1f2632;

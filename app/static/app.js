@@ -207,12 +207,18 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.2.4',
+      'settings.aboutVersion': '当前版本：2.3',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
       'settings.newPwd': '新密码（留空则不修改）',
       'settings.saveAccount': '保存账号设置',
+      'settings.loginGuard': '登录防护',
+      'settings.loginGuardHint': '服务模式专用：连续登录失败达到次数后，按设定时长锁定该账户；填 0 表示不限制。',
+      'settings.loginMaxFail': '失败次',
+      'settings.loginLockMinutes': '锁定时（分钟）',
+      'settings.saveLoginGuard': '保存',
+      'settings.loginGuardInvalid': '请填写 0 或正整数',
       'settings.backup': '备份与恢复',
       'settings.backupHint': '备份包含数据库和上传的图标；恢复会覆盖当前全部数据，请先下载备份。',
       'settings.download': '下载备份',
@@ -228,6 +234,7 @@
       'toast.loginSuccess': '登录成功',
       'toast.logout': '已退出登录',
       'toast.settingsSaved': '设置已保存',
+      'toast.loginGuardSaved': '登录防护设置已保存',
       'toast.accountSaved': '账号已更新',
       'toast.pinned': '已置顶「{name}」',
       'toast.categoryOrder': '分类顺序已更新',
@@ -441,12 +448,18 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.2.4',
+      'settings.aboutVersion': 'Current version: 2.3',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
       'settings.newPwd': 'New password (leave blank to keep)',
       'settings.saveAccount': 'Save account',
+      'settings.loginGuard': 'Sign-in protection',
+      'settings.loginGuardHint': 'Service mode only: lock the account for the configured duration after repeated failed sign-ins; set 0 for no limit.',
+      'settings.loginMaxFail': 'Failures',
+      'settings.loginLockMinutes': 'Lock (min)',
+      'settings.saveLoginGuard': 'Save',
+      'settings.loginGuardInvalid': 'Enter 0 or a positive whole number',
       'settings.backup': 'Backup & restore',
       'settings.backupHint': 'Backup includes the database and icons. Restoring overwrites all data, download a backup first.',
       'settings.download': 'Download backup',
@@ -463,6 +476,7 @@
       'toast.loginSuccess': 'Signed in',
       'toast.logout': 'Signed out',
       'toast.settingsSaved': 'Settings saved',
+      'toast.loginGuardSaved': 'Sign-in protection saved',
       'toast.accountSaved': 'Account updated',
       'toast.pinned': 'Pinned “{name}”',
       'toast.categoryOrder': 'Category order updated',
@@ -886,6 +900,8 @@
       : (settings.hot_window === '30' ? '30' : '7');
     $('#settingSearchHighlight').checked = settings.search_highlight !== '0';
     $('#settingHotBoard').checked = settings.hot_board !== '0';
+    $('#settingLoginMaxFail').value = settings.login_max_fail ?? '0';
+    $('#settingLoginLockMinutes').value = settings.login_lock_minutes ?? '0';
     state.siteIconDraft = settings.site_icon || '';
     updateSiteIconPreview();
   }
@@ -959,10 +975,46 @@
     $('#settingsError').textContent = '';
     $('#accountError').textContent = '';
     $('#backupError').textContent = '';
+    $('#loginGuardError').textContent = '';
     $('#accCurrent').value = '';
     $('#accUsername').value = state.user;
     $('#accNewPass').value = '';
     els.settingsModal.hidden = false;
+  }
+
+  function readLoginGuardValues() {
+    const read = (selector) => {
+      const raw = $(selector).value.trim();
+      if (raw === '') return '0';
+      if (!/^\d+$/.test(raw)) throw new Error(t('settings.loginGuardInvalid'));
+      return String(parseInt(raw, 10));
+    };
+    return {
+      login_max_fail: read('#settingLoginMaxFail'),
+      login_lock_minutes: read('#settingLoginLockMinutes'),
+    };
+  }
+
+  async function saveLoginGuard() {
+    const btn = $('#saveLoginGuard');
+    const errorEl = $('#loginGuardError');
+    errorEl.textContent = '';
+    let payload;
+    try {
+      payload = readLoginGuardValues();
+    } catch (err) {
+      errorEl.textContent = err.message;
+      return;
+    }
+    btn.disabled = true;
+    try {
+      await api('/api/settings', { method: 'PUT', body: JSON.stringify(payload) });
+      toast(t('toast.loginGuardSaved'));
+    } catch (err) {
+      errorEl.textContent = err.message;
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   async function saveSettings() {
@@ -978,6 +1030,12 @@
     };
     if (!payload.site_name) {
       $('#settingsError').textContent = t('settings.siteName');
+      return;
+    }
+    try {
+      Object.assign(payload, readLoginGuardValues());
+    } catch (err) {
+      $('#settingsError').textContent = err.message;
       return;
     }
     const btn = $('#saveSettings');
@@ -2348,6 +2406,7 @@
   $('#cancelSettings').addEventListener('click', () => { els.settingsModal.hidden = true; });
   bindMaskClose(els.settingsModal, () => { els.settingsModal.hidden = true; });
   $('#saveSettings').addEventListener('click', saveSettings);
+  $('#saveLoginGuard').addEventListener('click', saveLoginGuard);
   els.btnHotPanel.addEventListener('click', openHotPanel);
   $('#closeHot').addEventListener('click', () => { els.hotModal.hidden = true; });
   $('#closeHotFoot').addEventListener('click', () => { els.hotModal.hidden = true; });

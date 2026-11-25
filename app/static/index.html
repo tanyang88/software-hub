@@ -9,7 +9,7 @@
 <link rel="icon" href="/static/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#2563eb">
-<link rel="stylesheet" href="/static/styles.css?v=2.2.4-2">
+<link rel="stylesheet" href="/static/styles.css?v=2.3">
 </head>
 <body>
 <header class="topbar">
@@ -318,6 +318,17 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
       </section>
 
       <section class="settings-section">
+        <h4 data-i18n="settings.loginGuard">登录防护</h4>
+        <p class="hint-text" data-i18n="settings.loginGuardHint">服务模式专用：连续登录失败达到次数后，按设定时长锁定该账户；填 0 表示不限制。</p>
+        <div class="login-guard-row">
+          <input type="number" id="settingLoginMaxFail" min="0" max="9999" step="1" inputmode="numeric" data-i18n-ph="settings.loginMaxFail" placeholder="失败次" aria-label="连续失败次数">
+          <input type="number" id="settingLoginLockMinutes" min="0" max="9999" step="1" inputmode="numeric" data-i18n-ph="settings.loginLockMinutes" placeholder="锁定时（分钟）" aria-label="锁定时长（分钟）">
+          <button type="button" class="btn btn-small" id="saveLoginGuard" data-i18n="settings.saveLoginGuard">保存</button>
+        </div>
+        <span class="form-error" id="loginGuardError"></span>
+      </section>
+
+      <section class="settings-section">
         <h4 data-i18n="settings.backup">备份与恢复</h4>
         <p class="hint-text" data-i18n="settings.backupHint">备份包含数据库和上传的图标；恢复会覆盖当前全部数据，请先下载备份。</p>
         <div class="section-actions">
@@ -334,7 +345,7 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
 
       <section class="settings-section">
         <h4 data-i18n="settings.about">关于</h4>
-        <p class="about-version" data-i18n="settings.aboutVersion">当前版本：2.2.4</p>
+        <p class="about-version" data-i18n="settings.aboutVersion">当前版本：2.3</p>
       </section>
 
     </div>
@@ -546,6 +557,6 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
 
 <div class="toast" id="toast"></div>
 
-<script src="/static/app.js?v=2.2.4"></script>
+<script src="/static/app.js?v=2.3"></script>
 </body>
 </html>
