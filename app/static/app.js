@@ -1584,7 +1584,7 @@
           <div>
             <div class="card-title-row">
               <h3 class="card-title" title="${escapeHtml(t('card.copyTitleHint'))}">${nameHtml}</h3>
-              ${(item.category_names || []).length && state.activeCategory === 'all'
+              ${(item.category_names || []).length
                 ? `<span class="card-cats">${(item.category_names || []).map((n) => `<span class="cat-tag">${escapeHtml(n)}</span>`).join('')}</span>`
                 : ''}
             </div>
