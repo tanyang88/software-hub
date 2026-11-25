@@ -96,10 +96,11 @@
   .category-list::-webkit-scrollbar { display: none; }
   .cat-item {
     flex: 0 0 auto;
+    width: auto;
     gap: 5px;
     padding: 8px 10px;
     border-radius: 999px;
-    background: #f2f5fa;
+    background: rgba(125, 135, 155, 0.13);
   }
   .cat-name {
     flex: 0 0 auto;
@@ -289,6 +290,7 @@
   }
   .modal {
     max-width: none;
+    height: 100vh;
     height: 100dvh;
     max-height: none;
     border-radius: 0;
@@ -298,7 +300,7 @@
     top: 0;
     z-index: 3;
     padding: 12px 14px;
-    background: var(--panel);
+    background: inherit;
   }
   .modal-body { padding: 12px 14px; }
   .modal-foot-bar {
