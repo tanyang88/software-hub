@@ -19,6 +19,7 @@
     'zh-CN': {
       'header.subtitle': '专属于你的软件收藏',
       'search.placeholder': '搜索软件名称或简介',
+      'field.clear': '清空',
       'search.heading': '搜索结果',
       'btn.login': '登录',
       'btn.settings': '设置',
@@ -208,7 +209,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.4.0',
+      'settings.aboutVersion': '当前版本：2.4.1',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -263,6 +264,7 @@
     en: {
       'header.subtitle': 'Organize your software collection by category',
       'search.placeholder': 'Search name or description',
+      'field.clear': 'Clear',
       'search.heading': 'Search results',
       'btn.login': 'Sign in',
       'btn.settings': 'Settings',
@@ -452,7 +454,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.4.0',
+      'settings.aboutVersion': 'Current version: 2.4.1',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -768,6 +770,75 @@
     return ok;
   }
 
+  // ---------------- 输入框内置清空按钮 ----------------
+  // 给除复选 / 文件 / 颜色等控件外的输入框包一层容器，右侧放一个 × 按钮，点击清空内容。
+  const CLEAR_SKIP_TYPES = ['checkbox', 'radio', 'file', 'color', 'range', 'hidden', 'submit', 'button', 'reset', 'image'];
+
+  function attachClearButton(field) {
+    if (!field || field.nodeType !== 1) return;
+    if (field.tagName !== 'INPUT' && field.tagName !== 'TEXTAREA') return;
+    const type = (field.getAttribute('type') || 'text').toLowerCase();
+    if (CLEAR_SKIP_TYPES.includes(type)) return;
+    if (field.closest('.search-box') || field.closest('.clearable-field')) return;
+
+    const wrap = document.createElement('span');
+    wrap.className = 'clearable-field';
+    field.parentNode.insertBefore(wrap, field);
+    wrap.appendChild(field);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'field-clear';
+    btn.tabIndex = -1;
+    btn.textContent = '×';
+    btn.title = t('field.clear');
+    btn.setAttribute('aria-label', t('field.clear'));
+    wrap.appendChild(btn);
+
+    const syncState = () => {
+      wrap.classList.toggle('has-value', String(field.value || '').length > 0);
+    };
+    field.addEventListener('input', syncState);
+    field.addEventListener('change', syncState);
+    syncState();
+
+    btn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!field.value) {
+        field.focus();
+        return;
+      }
+      field.value = '';
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      field.dispatchEvent(new Event('change', { bubbles: true }));
+      syncState();
+      field.focus();
+    });
+  }
+
+  function setupClearButtons(root) {
+    if (!root || root.nodeType !== 1) return;
+    if (root.tagName === 'INPUT' || root.tagName === 'TEXTAREA') {
+      attachClearButton(root);
+    }
+    if (root.querySelectorAll) {
+      root.querySelectorAll('input, textarea').forEach(attachClearButton);
+    }
+  }
+
+  function watchClearButtons() {
+    setupClearButtons(document.body);
+    const observer = new MutationObserver((records) => {
+      records.forEach((record) => {
+        record.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) setupClearButtons(node);
+        });
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
   // ---------------- 行为埋点（热门排序的数据来源） ----------------
   // 只上报最小信息：事件类型、软件 id、链接标识、关键词；3 秒内相同事件去重。
   const trackRecent = new Map();
@@ -826,6 +897,11 @@
     });
     $$('[data-i18n-ph]').forEach((node) => {
       node.placeholder = t(node.dataset.i18nPh);
+    });
+    $$('.field-clear').forEach((node) => {
+      const label = t('field.clear');
+      node.title = label;
+      node.setAttribute('aria-label', label);
     });
   }
 
@@ -2679,6 +2755,7 @@
   });
 
   // ---------------- 启动 ----------------
+  watchClearButtons();
   (async function boot() {
     try {
       await loadSettings();

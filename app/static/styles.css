@@ -1309,6 +1309,64 @@ button, input, textarea, select { font-family: inherit; }
 }
 .search-clear:hover { background: #eef1f6; color: var(--text); }
 
+/* ---------------- 输入框内置清空按钮 ---------------- */
+.clearable-field {
+  position: relative;
+  display: block;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+.clearable-field > input,
+.clearable-field > textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 30px !important;
+}
+
+/* 数字框右侧的浏览器步进按钮会与清空按钮重叠，统一隐藏 */
+.clearable-field > input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.clearable-field > input[type="number"]::-webkit-inner-spin-button,
+.clearable-field > input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.clearable-field > input[type="password"]::-ms-reveal { display: none; }
+
+.field-clear {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  opacity: .38;
+  transition: opacity .14s ease, background .14s ease, color .14s ease;
+}
+
+.clearable-field > textarea + .field-clear {
+  top: 8px;
+  transform: none;
+}
+
+.clearable-field:hover .field-clear,
+.clearable-field:focus-within .field-clear { opacity: .95; }
+.clearable-field.has-value .field-clear { opacity: .85; }
+.field-clear:hover { background: #eef1f6; color: var(--danger); }
+
+/* 分页跳转框保持紧凑宽度，不让清空按钮撑开一行 */
+.page-jump .clearable-field { flex: 0 0 auto; width: auto; }
+
 /* ---------------- 弹窗尺寸 ---------------- */
 .modal-small { max-width: 430px; }
 .modal-wide { max-width: 508px; }
@@ -1487,6 +1545,7 @@ button, input, textarea, select { font-family: inherit; }
 [data-theme="dark"] .card:not(.card-custom) { background: var(--panel); }
 [data-theme="dark"] .empty-state { background: var(--panel); }
 [data-theme="dark"] .search-clear:hover { background: #2b3341; color: var(--text); }
+[data-theme="dark"] .field-clear:hover { background: #2b3341; color: #ff8f92; }
 [data-theme="dark"] .cat-count { border: none; }
 [data-theme="dark"] .mini-btn { background: #2a3240; color: var(--text); border-color: var(--border-strong); }
 [data-theme="dark"] .mini-btn:hover { color: var(--primary); border-color: var(--primary); }
