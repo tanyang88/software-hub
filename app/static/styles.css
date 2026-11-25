@@ -671,7 +671,8 @@ button, input, textarea, select { font-family: inherit; }
   margin-bottom: 4px;
 }
 
-.card-title { margin: 0; font-size: 16px; font-weight: 600; }
+.card-title { margin: 0; font-size: 16px; font-weight: 600; cursor: pointer; transition: color .14s ease; }
+.card-title:hover { color: var(--primary); }
 
 .card-desc {
   margin: 0;

@@ -112,6 +112,7 @@
       'card.pin': '置顶',
       'card.unpin': '取消置顶',
       'card.badgePin': '置顶',
+      'card.copyTitleHint': '单击复制标题',
       'card.remove': '删除',
       'card.website': '🌐 官方网站：',
       'card.github': '🌐 GitHub 地址：',
@@ -207,7 +208,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.3.0',
+      'settings.aboutVersion': '当前版本：2.4.0',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -234,6 +235,8 @@
       'toast.loginSuccess': '登录成功',
       'toast.logout': '已退出登录',
       'toast.settingsSaved': '设置已保存',
+      'toast.titleCopied': '已复制标题：{name}',
+      'toast.copyFailed': '复制失败，请手动选择文字',
       'toast.loginGuardSaved': '登录防护设置已保存',
       'toast.accountSaved': '账号已更新',
       'toast.pinned': '已置顶「{name}」',
@@ -353,6 +356,7 @@
       'card.pin': 'Pin',
       'card.unpin': 'Unpin',
       'card.badgePin': 'Pinned',
+      'card.copyTitleHint': 'Click to copy title',
       'card.remove': 'Delete',
       'card.website': '🌐 Website: ',
       'card.github': '🌐 GitHub: ',
@@ -448,7 +452,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.3.0',
+      'settings.aboutVersion': 'Current version: 2.4.0',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -476,6 +480,8 @@
       'toast.loginSuccess': 'Signed in',
       'toast.logout': 'Signed out',
       'toast.settingsSaved': 'Settings saved',
+      'toast.titleCopied': 'Title copied: {name}',
+      'toast.copyFailed': 'Copy failed, select the text manually',
       'toast.loginGuardSaved': 'Sign-in protection saved',
       'toast.accountSaved': 'Account updated',
       'toast.pinned': 'Pinned “{name}”',
@@ -731,6 +737,35 @@
     els.toast.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => els.toast.classList.remove('show'), 2600);
+  }
+
+  // 复制到系统剪贴板：优先 Clipboard API；局域网 http 等非安全上下文回退到 execCommand
+  async function copyToClipboard(text) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (err) {
+      // 交给下面的兜底方案
+    }
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.top = '-9999px';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    area.setSelectionRange(0, text.length);
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch (err) {
+      ok = false;
+    }
+    document.body.removeChild(area);
+    return ok;
   }
 
   // ---------------- 行为埋点（热门排序的数据来源） ----------------
@@ -1413,7 +1448,7 @@
         ${cardActionsHtml(item, true)}
         ${item.pinned ? `<span class="pin-flag" title="${escapeHtml(t('card.badgePin'))}">📌</span>` : ''}
         <div class="card-logo">${logoHtml(item)}</div>
-        <h3 class="card-title">${nameHtml}</h3>
+        <h3 class="card-title" title="${escapeHtml(t('card.copyTitleHint'))}">${nameHtml}</h3>
       </article>`;
     }
     const descHtml = item.description
@@ -1428,7 +1463,7 @@
         <div class="card-main">
           <div>
             <div class="card-title-row">
-              <h3 class="card-title">${nameHtml}</h3>
+              <h3 class="card-title" title="${escapeHtml(t('card.copyTitleHint'))}">${nameHtml}</h3>
               ${(item.category_names || []).length && state.activeCategory === 'all'
                 ? `<span class="card-cats">${(item.category_names || []).map((n) => `<span class="cat-tag">${escapeHtml(n)}</span>`).join('')}</span>`
                 : ''}
@@ -2287,6 +2322,22 @@
     if (state.selectMode && !event.target.closest('.card-actions')) {
       const card = event.target.closest('.card');
       if (card) toggleSelect(card.dataset.id);
+      return;
+    }
+    // 单击软件标题：复制标题文字到系统剪贴板
+    const titleEl = event.target.closest('.card-title');
+    if (titleEl) {
+      const titleCard = event.target.closest('.card');
+      const item = titleCard
+        ? state.items.find((i) => String(i.id) === String(titleCard.dataset.id))
+        : null;
+      if (item) {
+        const ok = await copyToClipboard(item.name);
+        toast(
+          ok ? t('toast.titleCopied', { name: item.name }) : t('toast.copyFailed'),
+          !ok
+        );
+      }
       return;
     }
     const pinBtn = event.target.closest('[data-pin]');
