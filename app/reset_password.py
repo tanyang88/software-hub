@@ -29,7 +29,7 @@ def main():
         row = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
         if row:
             conn.execute(
-                "UPDATE users SET password_hash = ? WHERE id = ?",
+                "UPDATE users SET password_hash = ?, failed_attempts = 0, locked_until = 0 WHERE id = ?",
                 (server.hash_password(password), row["id"]),
             )
         else:
@@ -42,7 +42,7 @@ def main():
     finally:
         conn.close()
 
-    print("已重置账号 %s 的密码，所有登录会话已失效。" % username)
+    print("已重置账号 %s 的密码，并清除登录失败计数与锁定状态；所有登录会话已失效。" % username)
 
 
 if __name__ == "__main__":
