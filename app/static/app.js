@@ -175,7 +175,7 @@
       'form.saving': '保存中…',
       'form.errorName': '请填写软件名称',
       'form.duplicateTitle': '已有同名软件',
-      'form.duplicateName': '已存在同名软件「{name}」。若软件简介、链接不同，可点击「确认」继续添加。',
+      'form.duplicateName': '已存在同名软件「{name}」。点击「确认」继续添加，或点击「取消」返回修改。',
       'form.errorCategory': '请先创建并选择一个分类',
       'form.noCategories': '还没有分类，保存后这张卡片会归到「未分类」',
       'login.title': '登录',
@@ -425,7 +425,7 @@
       'form.saving': 'Saving…',
       'form.errorName': 'Please enter a name',
       'form.duplicateTitle': 'Duplicate name',
-      'form.duplicateName': 'A software named “{name}” already exists. If its description or links differ, click OK to add it anyway.',
+      'form.duplicateName': 'A software named “{name}” already exists. Click OK to add it anyway, or Cancel to go back and edit.',
       'form.errorCategory': 'Please create and select a category',
       'form.noCategories': 'No categories yet — the card will be saved as Uncategorized',
       'login.title': 'Sign in',
@@ -2169,7 +2169,6 @@
             text: t('form.duplicateName', { name: duplicate.name }),
             okText: t('confirm.ack'),
             tone: 'primary',
-            hideCancel: true,
             onOk: () => persistSoftware(body, null),
           });
           return;
