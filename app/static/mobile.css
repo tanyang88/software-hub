@@ -104,6 +104,7 @@
   }
   .cat-name {
     flex: 0 0 auto;
+    max-width: 42vw;
     font-size: 13px;
   }
   .cat-count {
@@ -303,6 +304,7 @@
     background: inherit;
   }
   .modal-body { padding: 12px 14px; }
+  .modal-foot { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
   .modal-foot-bar {
     padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
   }
@@ -316,7 +318,7 @@
   .login-guard-row input,
   .search-box input,
   .side-box select {
-    font-size: 16px;
+    font-size: 16px !important;
   }
 
   .form-row .form-item { flex: 1 1 100%; }
