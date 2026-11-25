@@ -20,6 +20,8 @@
       'header.subtitle': '专属于你的软件收藏',
       'search.placeholder': '搜索软件名称或简介',
       'field.clear': '清空',
+      'field.showPassword': '显示密码',
+      'field.hidePassword': '隐藏密码',
       'search.heading': '搜索结果',
       'btn.login': '登录',
       'btn.settings': '设置',
@@ -209,7 +211,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.4.1',
+      'settings.aboutVersion': '当前版本：2.4.2',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -265,6 +267,8 @@
       'header.subtitle': 'Organize your software collection by category',
       'search.placeholder': 'Search name or description',
       'field.clear': 'Clear',
+      'field.showPassword': 'Show password',
+      'field.hidePassword': 'Hide password',
       'search.heading': 'Search results',
       'btn.login': 'Sign in',
       'btn.settings': 'Settings',
@@ -454,7 +458,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.4.1',
+      'settings.aboutVersion': 'Current version: 2.4.2',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -773,6 +777,8 @@
   // ---------------- 输入框内置清空按钮 ----------------
   // 给除复选 / 文件 / 颜色等控件外的输入框包一层容器，右侧放一个 × 按钮，点击清空内容。
   const CLEAR_SKIP_TYPES = ['checkbox', 'radio', 'file', 'color', 'range', 'hidden', 'submit', 'button', 'reset', 'image'];
+  const EYE_OPEN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+  const EYE_OFF_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 
   function attachClearButton(field) {
     if (!field || field.nodeType !== 1) return;
@@ -785,6 +791,32 @@
     wrap.className = 'clearable-field';
     field.parentNode.insertBefore(wrap, field);
     wrap.appendChild(field);
+
+    // 密码框在清空按钮左侧再加一个显示 / 隐藏密码切换按钮
+    if (type === 'password') {
+      wrap.classList.add('has-reveal');
+      const revealBtn = document.createElement('button');
+      revealBtn.type = 'button';
+      revealBtn.className = 'field-reveal';
+      revealBtn.tabIndex = -1;
+      const syncReveal = () => {
+        const hidden = field.getAttribute('type') === 'password';
+        revealBtn.innerHTML = hidden ? EYE_OPEN_SVG : EYE_OFF_SVG;
+        const label = t(hidden ? 'field.showPassword' : 'field.hidePassword');
+        revealBtn.title = label;
+        revealBtn.setAttribute('aria-label', label);
+      };
+      syncReveal();
+      revealBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const hidden = field.getAttribute('type') === 'password';
+        field.setAttribute('type', hidden ? 'text' : 'password');
+        syncReveal();
+        field.focus();
+      });
+      wrap.appendChild(revealBtn);
+    }
 
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -900,6 +932,12 @@
     });
     $$('.field-clear').forEach((node) => {
       const label = t('field.clear');
+      node.title = label;
+      node.setAttribute('aria-label', label);
+    });
+    $$('.field-reveal').forEach((node) => {
+      const field = node.parentNode.querySelector('input');
+      const label = t(field && field.type === 'text' ? 'field.hidePassword' : 'field.showPassword');
       node.title = label;
       node.setAttribute('aria-label', label);
     });

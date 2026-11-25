@@ -1364,6 +1364,33 @@ button, input, textarea, select { font-family: inherit; }
 .clearable-field.has-value .field-clear { opacity: .85; }
 .field-clear:hover { background: #eef1f6; color: var(--danger); }
 
+/* 密码框：显示 / 隐藏密码按钮，位于清空按钮左侧 */
+.clearable-field.has-reveal > input { padding-right: 58px !important; }
+
+.field-reveal {
+  position: absolute;
+  top: 50%;
+  right: 26px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: .42;
+  transition: opacity .14s ease, background .14s ease, color .14s ease;
+}
+
+.field-reveal svg { width: 15px; height: 15px; display: block; }
+.clearable-field:hover .field-reveal,
+.clearable-field:focus-within .field-reveal { opacity: .95; }
+.field-reveal:hover { background: #eef1f6; color: var(--text); }
+
 /* 分页跳转框保持紧凑宽度，不让清空按钮撑开一行 */
 .page-jump .clearable-field { flex: 0 0 auto; width: auto; }
 
@@ -1546,6 +1573,7 @@ button, input, textarea, select { font-family: inherit; }
 [data-theme="dark"] .empty-state { background: var(--panel); }
 [data-theme="dark"] .search-clear:hover { background: #2b3341; color: var(--text); }
 [data-theme="dark"] .field-clear:hover { background: #2b3341; color: #ff8f92; }
+[data-theme="dark"] .field-reveal:hover { background: #2b3341; color: var(--text); }
 [data-theme="dark"] .cat-count { border: none; }
 [data-theme="dark"] .mini-btn { background: #2a3240; color: var(--text); border-color: var(--border-strong); }
 [data-theme="dark"] .mini-btn:hover { color: var(--primary); border-color: var(--primary); }
