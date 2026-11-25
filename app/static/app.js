@@ -175,7 +175,7 @@
       'form.saving': '保存中…',
       'form.errorName': '请填写软件名称',
       'form.duplicateTitle': '已有同名软件',
-      'form.duplicateName': '已存在同名软件「{name}」，请修改名称后再保存，避免重复添加。',
+      'form.duplicateName': '已存在同名软件「{name}」。若软件简介、链接不同，可点击「确认」继续添加。',
       'form.errorCategory': '请先创建并选择一个分类',
       'form.noCategories': '还没有分类，保存后这张卡片会归到「未分类」',
       'login.title': '登录',
@@ -425,7 +425,7 @@
       'form.saving': 'Saving…',
       'form.errorName': 'Please enter a name',
       'form.duplicateTitle': 'Duplicate name',
-      'form.duplicateName': 'A software named “{name}” already exists. Please change the name before saving.',
+      'form.duplicateName': 'A software named “{name}” already exists. If its description or links differ, click OK to add it anyway.',
       'form.errorCategory': 'Please create and select a category',
       'form.noCategories': 'No categories yet — the card will be saved as Uncategorized',
       'login.title': 'Sign in',
@@ -2129,24 +2129,6 @@
       els.formError.textContent = t('form.errorName');
       return;
     }
-    if (!state.editingId) {
-      try {
-        const duplicate = await findSoftwareByName(name);
-        if (duplicate) {
-          askConfirm({
-            title: t('form.duplicateTitle'),
-            text: t('form.duplicateName', { name: duplicate.name }),
-            okText: t('confirm.ack'),
-            tone: 'primary',
-            hideCancel: true,
-          });
-          return;
-        }
-      } catch (err) {
-        els.formError.textContent = err.message;
-        return;
-      }
-    }
     const body = {
       name,
       category_ids: selectedCategoryIds(),
@@ -2177,12 +2159,36 @@
       body.licenses.push(cb.value);
     });
 
+    // 添加时若名称重复：先提醒，确认后仍继续创建同名软件
+    if (!state.editingId) {
+      try {
+        const duplicate = await findSoftwareByName(name);
+        if (duplicate) {
+          askConfirm({
+            title: t('form.duplicateTitle'),
+            text: t('form.duplicateName', { name: duplicate.name }),
+            okText: t('confirm.ack'),
+            tone: 'primary',
+            hideCancel: true,
+            onOk: () => persistSoftware(body, null),
+          });
+          return;
+        }
+      } catch (err) {
+        els.formError.textContent = err.message;
+        return;
+      }
+    }
+    await persistSoftware(body, state.editingId);
+  }
+
+  async function persistSoftware(body, editingId) {
     const btn = $('#saveSoftware');
     btn.disabled = true;
     btn.textContent = t('form.saving');
     try {
-      if (state.editingId) {
-        await api(`/api/software/${state.editingId}`, { method: 'PUT', body: JSON.stringify(body) });
+      if (editingId) {
+        await api(`/api/software/${editingId}`, { method: 'PUT', body: JSON.stringify(body) });
         toast(t('toast.saved'));
       } else {
         await api('/api/software', { method: 'POST', body: JSON.stringify(body) });
