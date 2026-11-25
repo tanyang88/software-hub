@@ -69,6 +69,7 @@
       'bulk.noSelection': '请先勾选卡片',
       'bulk.chooseCategory': '选择分类',
       'confirm.ok': '删除',
+      'confirm.ack': '确认',
       'confirm.cancel': '取消',
       'categoryDeleteTitle': '删除分类',
       'cat.renameTitle': '重命名分类',
@@ -173,6 +174,8 @@
       'form.save': '保存',
       'form.saving': '保存中…',
       'form.errorName': '请填写软件名称',
+      'form.duplicateTitle': '已有同名软件',
+      'form.duplicateName': '已存在同名软件「{name}」，请修改名称后再保存，避免重复添加。',
       'form.errorCategory': '请先创建并选择一个分类',
       'form.noCategories': '还没有分类，保存后这张卡片会归到「未分类」',
       'login.title': '登录',
@@ -211,7 +214,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.4.2',
+      'settings.aboutVersion': '当前版本：2.4.3',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -316,6 +319,7 @@
       'bulk.noSelection': 'Select some cards first',
       'bulk.chooseCategory': 'Choose category',
       'confirm.ok': 'Delete',
+      'confirm.ack': 'OK',
       'confirm.cancel': 'Cancel',
       'categoryDeleteTitle': 'Delete category',
       'cat.renameTitle': 'Rename category',
@@ -420,6 +424,8 @@
       'form.save': 'Save',
       'form.saving': 'Saving…',
       'form.errorName': 'Please enter a name',
+      'form.duplicateTitle': 'Duplicate name',
+      'form.duplicateName': 'A software named “{name}” already exists. Please change the name before saving.',
       'form.errorCategory': 'Please create and select a category',
       'form.noCategories': 'No categories yet — the card will be saved as Uncategorized',
       'login.title': 'Sign in',
@@ -458,7 +464,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.4.2',
+      'settings.aboutVersion': 'Current version: 2.4.3',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -1771,6 +1777,8 @@
     els.confirmOk.classList.toggle('btn-danger', opts.tone !== 'primary');
     els.confirmOk.classList.toggle('btn-primary', opts.tone === 'primary');
     els.confirmOk.disabled = false;
+    const cancelBtn = $('#confirmCancel');
+    if (cancelBtn) cancelBtn.hidden = !!opts.hideCancel;
 
     if (opts.altText) {
       els.confirmAlt.textContent = opts.altText;
@@ -2089,6 +2097,30 @@
     });
   }
 
+  // 添加软件前按名称搜索全部软件，确认是否已有同名条目（忽略首尾空格与英文大小写）
+  async function findSoftwareByName(name) {
+    const target = name.trim().toLowerCase();
+    let page = 1;
+    let pages = 1;
+    do {
+      const params = new URLSearchParams({
+        page: String(page),
+        page_size: '120',
+        category_id: 'all',
+        q: name,
+        sort: 'default',
+      });
+      const data = await api(`/api/software?${params.toString()}`);
+      const hit = (data.items || []).find(
+        (item) => String(item.name || '').trim().toLowerCase() === target
+      );
+      if (hit) return hit;
+      pages = Math.max(1, Number(data.pages) || 1);
+      page += 1;
+    } while (page <= pages && page <= 10);
+    return null;
+  }
+
   async function submitSoftware(event) {
     event.preventDefault();
     els.formError.textContent = '';
@@ -2096,6 +2128,24 @@
     if (!name) {
       els.formError.textContent = t('form.errorName');
       return;
+    }
+    if (!state.editingId) {
+      try {
+        const duplicate = await findSoftwareByName(name);
+        if (duplicate) {
+          askConfirm({
+            title: t('form.duplicateTitle'),
+            text: t('form.duplicateName', { name: duplicate.name }),
+            okText: t('confirm.ack'),
+            tone: 'primary',
+            hideCancel: true,
+          });
+          return;
+        }
+      } catch (err) {
+        els.formError.textContent = err.message;
+        return;
+      }
     }
     const body = {
       name,
