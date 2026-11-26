@@ -9,8 +9,9 @@
 <link rel="icon" href="/static/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#2563eb">
-<link rel="stylesheet" href="/static/styles.css?v=2.4.3">
-<link rel="stylesheet" href="/static/mobile.css?v=2.4.3">
+<link rel="stylesheet" href="/static/styles.css?v=2.4.4">
+<link rel="stylesheet" href="/static/mobile.css?v=2.4.4">
+<link rel="stylesheet" href="/static/scroll-jump.css?v=2.4.4">
 </head>
 <body>
 <header class="topbar">
@@ -149,6 +150,7 @@
       </div>
     </div>
 
+    <div class="card-scroll-shell">
     <div class="card-scroll" id="cardScroll">
       <div class="card-grid" id="cardGrid" data-cols="1"></div>
 
@@ -162,6 +164,19 @@
           <span data-i18n="pager.jumpSuffix">页</span>
           <button type="submit" class="btn btn-small" data-i18n="pager.go">GO</button>
         </form>
+      </div>
+    </div>
+    <div class="scroll-jump" id="scrollJump" role="group" aria-label="卡片区快速滚动" hidden>
+        <button type="button" class="scroll-jump-btn" id="scrollTopBtn" title="回到顶部" aria-label="回到顶部">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 15l6-6 6 6"></path>
+          </svg>
+        </button>
+        <button type="button" class="scroll-jump-btn" id="scrollBottomBtn" title="滑到底部" aria-label="滑到底部">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 9l6 6 6-6"></path>
+          </svg>
+        </button>
       </div>
     </div>
   </main>
@@ -346,7 +361,7 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
 
       <section class="settings-section">
         <h4 data-i18n="settings.about">关于</h4>
-        <p class="about-version" data-i18n="settings.aboutVersion">当前版本：2.4.3</p>
+        <p class="about-version" data-i18n="settings.aboutVersion">当前版本：2.4.4</p>
       </section>
 
     </div>
@@ -558,6 +573,7 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
 
 <div class="toast" id="toast"></div>
 
-<script src="/static/app.js?v=2.4.3"></script>
+<script src="/static/app.js?v=2.4.4"></script>
+<script src="/static/scroll-jump.js?v=2.4.4"></script>
 </body>
 </html>
