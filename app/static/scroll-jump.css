@@ -1,0 +1,80 @@
+/* ---------------- 卡片区滚动快捷按钮 ---------------- */
+
+.card-scroll-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.card-scroll-shell > .card-scroll {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.scroll-jump {
+  flex: 0 0 34px;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  z-index: 2;
+}
+
+.scroll-jump[hidden] { display: none; }
+
+.scroll-jump-btn {
+  width: 24px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease, color .14s ease, transform .14s ease;
+}
+
+.scroll-jump-btn svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.scroll-jump-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.scroll-jump-btn:active { transform: translateY(1px); }
+
+.scroll-jump-btn:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.scroll-jump-btn:disabled:hover {
+  border-color: var(--border-strong);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.scroll-jump-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* 手机端整页滚动、卡片区不单独出滚动条，隐藏这组桌面快捷按钮 */
+@media (max-width: 900px) {
+  .scroll-jump { display: none; }
+}
