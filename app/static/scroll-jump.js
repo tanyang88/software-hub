@@ -29,6 +29,17 @@
     return Math.max(0, scroller.scrollHeight - scroller.clientHeight);
   }
 
+  function positionRail() {
+    var panelRect = panel.getBoundingClientRect();
+    var railWidth = rail.offsetWidth || 34;
+    var desired = panelRect.right + 2;
+    var maxLeft = window.innerWidth - railWidth - 6;
+    var left = Math.max(8, Math.min(desired, maxLeft));
+
+    rail.style.left = left + 'px';
+    rail.style.top = (panelRect.top + panelRect.height / 2) + 'px';
+  }
+
   function update() {
     var scroller = currentScroller();
     var max = maxScroll(scroller);
@@ -39,6 +50,7 @@
     }
 
     rail.hidden = false;
+    positionRail();
     var position = scrollPosition(scroller);
     topBtn.disabled = position <= 2;
     bottomBtn.disabled = position >= max - 2;

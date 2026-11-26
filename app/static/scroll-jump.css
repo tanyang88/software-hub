@@ -1,21 +1,11 @@
 /* ---------------- 卡片区滚动快捷按钮 ---------------- */
 
-.card-scroll-shell {
-  flex: 1 1 auto;
-  min-height: 0;
-  display: flex;
-  align-items: stretch;
-  gap: 6px;
-}
-
-.card-scroll-shell > .card-scroll {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
 .scroll-jump {
-  flex: 0 0 34px;
-  align-self: center;
+  position: fixed;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  flex: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -76,5 +66,10 @@
 
 /* 手机端整页滚动、卡片区不单独出滚动条，隐藏这组桌面快捷按钮 */
 @media (max-width: 900px) {
+  .scroll-jump { display: none; }
+}
+
+/* 窄桌面窗口右侧没有足够空白，隐藏按钮避免压住滚动条 */
+@media (min-width: 901px) and (max-width: 1239px) {
   .scroll-jump { display: none; }
 }
