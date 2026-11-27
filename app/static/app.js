@@ -244,7 +244,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.4.7',
+      'settings.aboutVersion': '当前版本：2.4.8',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -525,7 +525,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.4.7',
+      'settings.aboutVersion': 'Current version: 2.4.8',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -1617,7 +1617,6 @@
       const labels = { url_home: '官方网站', url_github: 'GitHub', url_release: '版本更新', url_doc: '官方文档' };
       add(labels[key], url);
     });
-    add('图标', safeHref(item.logo));
     const platforms = PLATFORMS.filter((p) => item.platforms && item.platforms[p.key]).map((p) => p.label);
     add('支持系统', platforms.join(' / '));
     add('授权方式', (item.licenses || []).map((key) => t(`license.${key}`)).join(' / '));
