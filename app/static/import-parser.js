@@ -74,6 +74,7 @@
   function splitLine(line) {
     const text = cleanLine(line);
     if (!text) return null;
+    if (/^(```|~~~)/.test(text)) return null;
 
     if (/^\|.*\|$/.test(text)) {
       const cells = text.slice(1, -1).split('|').map((cell) => cell.trim());
@@ -282,6 +283,8 @@
     const usedUrls = new Set();
     const looseLinks = [];
     const plainCandidates = [];
+    const invalidLinks = [];
+    let currentLineText = '';
     let currentField = '';
     let descriptionStarted = false;
     let invalidLinkCount = 0;
@@ -295,6 +298,14 @@
         Object.assign(existing.params, params);
       } else {
         warnings.push({ code, params, count: 1 });
+      }
+    };
+
+    const noteInvalid = (fallback = '') => {
+      invalidLinkCount += 1;
+      const raw = cleanLine(currentLineText || fallback).replace(/\s+/g, ' ').trim();
+      if (raw && !invalidLinks.includes(raw) && invalidLinks.length < 8) {
+        invalidLinks.push(raw.slice(0, 160));
       }
     };
 
@@ -312,7 +323,7 @@
       }
       const cleanLink = cleanUrl(link);
       if (!cleanLink) {
-        invalidLinkCount += 1;
+        noteInvalid(link);
         return;
       }
       if (state.downloads.some((item) => canonicalUrl(item.link) === canonicalUrl(cleanLink))) return;
@@ -327,7 +338,7 @@
       }
       const cleanLink = cleanUrl(link);
       if (!cleanLink) {
-        invalidLinkCount += 1;
+        noteInvalid(link);
         return;
       }
       if (state.extra_links.some((item) => canonicalUrl(item.link) === canonicalUrl(cleanLink))) return;
@@ -343,7 +354,7 @@
       const spec = parseLinkSpec(value);
       const validLinks = spec.links.map((item) => cleanUrl(item.url)).filter(Boolean);
       if (!validLinks.length) {
-        invalidLinkCount += 1;
+        noteInvalid(value);
         return;
       }
       if (!state[field] && claim(validLinks[0])) {
@@ -354,6 +365,7 @@
 
     let lines = source.replace(/\r\n?/g, '\n').split('\n');
     lines.forEach((rawLine) => {
+      currentLineText = cleanLine(rawLine);
       const parsedLine = splitLine(rawLine);
       if (!parsedLine) {
         if (currentField === 'description' && state.description) state.description += '\n';
@@ -409,7 +421,7 @@
             state.logo = link;
             claim(link);
           } else {
-            invalidLinkCount += 1;
+            noteInvalid(value);
           }
         }
         return;
@@ -433,7 +445,7 @@
       if (field === 'downloads') {
         const spec = parseLinkSpec(value);
         if (!spec.links.length) {
-          invalidLinkCount += 1;
+          noteInvalid(value);
           return;
         }
         spec.links.forEach((item) => {
@@ -446,7 +458,7 @@
       if (field === 'extra_links') {
         const spec = parseLinkSpec(value);
         if (!spec.links.length) {
-          invalidLinkCount += 1;
+          noteInvalid(value);
           return;
         }
         spec.links.forEach((item) => {
@@ -532,7 +544,7 @@
 
     looseLinks.forEach(addLooseLink);
 
-    if (invalidLinkCount) addWarning('invalidUrl', { count: invalidLinkCount });
+    if (invalidLinkCount) addWarning('invalidUrl', { count: invalidLinkCount, items: invalidLinks });
     if (ignoredDownloadCount) addWarning('downloadLimit', { count: ignoredDownloadCount });
     if (ignoredExtraCount) addWarning('extraLimit', { count: ignoredExtraCount });
     if (state.url_home && state.url_home.length > MAX_URL) state.url_home = state.url_home.slice(0, MAX_URL);

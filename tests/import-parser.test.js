@@ -79,6 +79,14 @@ assert.deepStrictEqual(tableParsed.fields.licenses, ['subscription']);
 
 const bad = '软件名称：Bad\n官方网站：javascript:alert(1)\n下载地址：坏链接 | ftp://x';
 const badParsed = parser.parseImportText(bad);
-assert.ok(badParsed.warnings.some((item) => item.code === 'invalidUrl'));
+const invalid = badParsed.warnings.find((item) => item.code === 'invalidUrl');
+assert.ok(invalid);
+assert.ok(invalid.params.items.some((item) => item.includes('下载地址：坏链接 | ftp://x')));
+
+const noColor = parser.parseImportText('软件名称：NoColor\n简介：没有背景色');
+assert.strictEqual(noColor.fields.card_color, '');
+
+const fenced = parser.parseImportText('```text\n软件名称：Fenced\n```');
+assert.strictEqual(fenced.fields.name, 'Fenced');
 
 console.log('import-parser tests passed');

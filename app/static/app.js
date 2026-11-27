@@ -185,7 +185,7 @@
       'import.copy': '复制',
       'import.copied': '已复制',
       'import.copyFailed': '复制失败，请手动选择文本',
-      'import.sample': '请从软件资料中提取信息，并严格按以下格式输出，不要添加解释：\n\n软件名称：\n简介：\n官方网站：\nGitHub：\n版本更新：\n官方文档：\n图标：\n支持系统：\n授权方式：\n分类：\n下载地址：名称 | 链接\n其他链接：名称 | 链接\n卡片背景色：\n\n填写说明：\n- 支持系统可写 Windows / Mac / Linux / Android / iOS / HarmonyOS\n- 授权方式可写 免费 / 订阅制 / 一次性买断 / 按量计费 / 基础免费+增值收费\n- 没有的字段留空或删除该行\n- 下载地址、其他链接可写多行，每行一条',
+      'import.sample': "请帮我收集这些软件的信息，并从软件资料中提取信息，且严格按以下markdown格式输出，不要添加解释，每个软件单独一段输出：\n```text\n软件名称：\n简介：\n官方网站：\nGitHub：\n版本更新：\n官方文档：\n图标：\n支持系统：\n授权方式：\n下载地址：名称 | 链接\n其他链接：名称 | 链接\n卡片背景色：\n```\n填写说明：\n- 软件名称为文字内容，只写软件的名称\n- 简介为文字内容，写软件的简介信息\n- 官方网站为链接URL，写软件的官方网站地址\n- GitHub为链接URL，写软件在GitHub网站的项目地址（仓库地址）\n- 版本更新为链接URL，写与软件版本更新有关的网页地址\n- 官方文档为链接URL，写与软件文档有关的网页地址，如果没有文档，可以用帮助页面或FAQ替代\n- 图标为链接URL，写软件图标文件的链接，找不到可以留空\n- 支持系统可写 Windows / Mac / Linux / Android / iOS / HarmonyOS\n- 授权方式可写 免费 / 订阅制 / 一次性买断 / 按量计费 / 基础免费+增值收费\n- 下载地址可写多行，每行一条，例如：官方网站的下载页面可以是 “下载地址：官方下载 | 链接”，GitHub网站的下载页面可是“下载地址：GitHub | 链接”，百度网盘的下载页面可以是“下载地址：百度网盘 | 链接”\n- 其他链接可写多行，每行一条，例如：Joplin插件的官方下载页面可以是“其他链接：插件下载 | 链接”\n- 没有的字段留空或删除该行",
       'import.placeholder': '把软件资料粘贴到这里，例如：\n软件名称：7-Zip\n简介：免费开源的文件压缩工具\n官方网站：https://www.7-zip.org/\n支持系统：Windows, Linux\n授权方式：免费',
       'import.overwrite': '覆盖表单中已有内容',
       'import.cancel': '取消',
@@ -201,6 +201,7 @@
       'import.warnDescriptionTooLong': '简介超过 4000 字，已截断。',
       'import.warnBadColor': '背景色格式不正确，已忽略。',
       'import.warnInvalidUrl': '已跳过 {n} 个无效链接。',
+      'import.warnInvalidUrlItems': '已跳过 {n} 个无效链接，位置：{items}',
       'import.warnDownloadLimit': '下载地址超过 20 条，已忽略 {n} 条。',
       'import.warnExtraLimit': '其他链接超过 20 条，已忽略 {n} 条。',
       'import.warnNoName': '未识别到软件名称，请手动填写。',
@@ -242,7 +243,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.4.5',
+      'settings.aboutVersion': '当前版本：2.4.6',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -463,7 +464,7 @@
       'import.copy': 'Copy',
       'import.copied': 'Copied',
       'import.copyFailed': 'Copy failed — select the text manually',
-      'import.sample': 'Extract the software information and output it strictly in this format, without explanations:\n\nName:\nDescription:\nWebsite:\nGitHub:\nReleases:\nDocs:\nIcon:\nPlatforms:\nLicense:\nCategory:\nDownload: Name | URL\nOther link: Name | URL\nCard background:\n\nNotes:\n- Platforms: Windows / Mac / Linux / Android / iOS / HarmonyOS\n- License: Free / Subscription / One-time purchase / Usage-based / Freemium\n- Leave missing fields blank or remove the line\n- Downloads and other links can be repeated, one per line',
+      'import.sample': "Please help me collect these software items and extract the information from the software details. Output strictly in the following markdown format, with no explanations, one block per software item:\n```text\nName:\nDescription:\nWebsite:\nGitHub:\nReleases:\nDocs:\nIcon:\nPlatforms:\nLicense:\nDownload: Name | URL\nOther link: Name | URL\nCard background:\n```\nNotes:\n- Name is plain text; write only the software name\n- Description is plain text; write a short description of the software\n- Website is a URL; write the official website\n- GitHub is a URL; write the GitHub repository address\n- Releases is a URL; write the page about version updates\n- Docs is a URL; write the documentation page; if there are no docs, a help page or FAQ is acceptable\n- Icon is a URL; write the software icon file URL; leave blank if not found\n- Platforms: Windows / Mac / Linux / Android / iOS / HarmonyOS\n- License: Free / Subscription / One-time purchase / Usage-based / Freemium\n- Download can have multiple lines, one per line, in the form “Download: Name | URL”\n- Other link can have multiple lines, one per line, in the form “Other link: Name | URL”\n- Leave missing fields blank or remove the line",
       'import.placeholder': 'Paste software details here, for example:\nName: 7-Zip\nDescription: Free and open-source file archiver\nWebsite: https://www.7-zip.org/\nPlatforms: Windows, Linux\nLicense: Free',
       'import.overwrite': 'Overwrite existing form content',
       'import.cancel': 'Cancel',
@@ -479,6 +480,7 @@
       'import.warnDescriptionTooLong': 'The description exceeded 4,000 characters and was truncated.',
       'import.warnBadColor': 'Invalid background color — ignored.',
       'import.warnInvalidUrl': 'Skipped {n} invalid link(s).',
+      'import.warnInvalidUrlItems': 'Skipped {n} invalid link(s). Location: {items}',
       'import.warnDownloadLimit': 'More than 20 downloads — {n} were ignored.',
       'import.warnExtraLimit': 'More than 20 extra links — {n} were ignored.',
       'import.warnNoName': 'No software name detected — please fill it manually.',
@@ -520,7 +522,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.4.5',
+      'settings.aboutVersion': 'Current version: 2.4.6',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -2110,7 +2112,11 @@
       case 'nameTooLong': return t('import.warnNameTooLong');
       case 'descriptionTooLong': return t('import.warnDescriptionTooLong');
       case 'badColor': return t('import.warnBadColor');
-      case 'invalidUrl': return t('import.warnInvalidUrl', { n });
+      case 'invalidUrl': {
+        const items = warning.params && Array.isArray(warning.params.items) ? warning.params.items : [];
+        if (items.length) return t('import.warnInvalidUrlItems', { n, items: items.join('；') });
+        return t('import.warnInvalidUrl', { n });
+      }
       case 'downloadLimit': return t('import.warnDownloadLimit', { n });
       case 'extraLimit': return t('import.warnExtraLimit', { n });
       case 'noName': return t('import.warnNoName');
@@ -2259,6 +2265,16 @@
       els.cardColorText.value = fields.card_color;
       syncColorPicker(fields.card_color);
       filled += 1;
+    } else if (!fields.card_color) {
+      // 没有卡片背景色这一行，或该行留空：识别为默认背景色。
+      // 普通合并时保留用户手动设置的背景色；覆盖模式或当前为空时恢复默认。
+      const hadColor = Boolean(els.cardColorText.value.trim());
+      if (overwrite || !hadColor) {
+        state.modalCardColor = '';
+        els.cardColorText.value = '';
+        syncColorPicker('');
+        if (hadColor) filled += 1;
+      }
     }
 
     if (!filled) {

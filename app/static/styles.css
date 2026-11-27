@@ -893,8 +893,8 @@ button, input, textarea, select { font-family: inherit; }
 .import-sample-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 8px;
   margin-top: 2px;
 }
 
