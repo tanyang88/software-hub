@@ -9,9 +9,9 @@
 <link rel="icon" href="/static/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" sizes="180x180">
 <meta name="theme-color" content="#2563eb">
-<link rel="stylesheet" href="/static/styles.css?v=2.4.4">
-<link rel="stylesheet" href="/static/mobile.css?v=2.4.4">
-<link rel="stylesheet" href="/static/scroll-jump.css?v=2.4.4">
+<link rel="stylesheet" href="/static/styles.css?v=2.4.5">
+<link rel="stylesheet" href="/static/mobile.css?v=2.4.5">
+<link rel="stylesheet" href="/static/scroll-jump.css?v=2.4.5">
 </head>
 <body>
 <header class="topbar">
@@ -359,7 +359,7 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
 
       <section class="settings-section">
         <h4 data-i18n="settings.about">关于</h4>
-        <p class="about-version" data-i18n="settings.aboutVersion">当前版本：2.4.4</p>
+        <p class="about-version" data-i18n="settings.aboutVersion">当前版本：2.4.5</p>
       </section>
 
     </div>
@@ -409,10 +409,14 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
   <div class="modal">
     <div class="modal-head">
       <h3 id="modalTitle">添加软件</h3>
-      <button class="icon-btn" id="closeModal" title="关闭">×</button>
+      <div class="modal-head-actions">
+        <button type="button" class="btn btn-small btn-ghost" id="openImport" data-i18n="import.button">导入信息</button>
+        <button class="icon-btn" id="closeModal" title="关闭">×</button>
+      </div>
     </div>
     <form id="softwareForm" class="modal-form">
       <div class="modal-body">
+      <div class="import-result" id="importSummary" role="status" hidden></div>
       <div class="form-item">
         <label><span data-i18n="form.name">软件名称</span> <span class="req">*</span></label>
         <input type="text" name="name" required maxlength="60" placeholder="例如：7-Zip">
@@ -530,6 +534,37 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
   </div>
 </div>
 
+<!-- 导入软件信息 -->
+<div class="modal-mask import-mask" id="importModal" hidden>
+  <div class="modal import-modal">
+    <div class="modal-head">
+      <h3 data-i18n="import.title">导入软件信息</h3>
+      <button class="icon-btn" id="closeImport" title="关闭">×</button>
+    </div>
+    <div class="modal-body import-body">
+      <p class="hint-text import-hint" data-i18n="import.hint">粘贴包含软件名称、简介、官网、GitHub、平台、授权等信息的文字，系统会按规则自动识别并填入表单。没有的字段可以留空。</p>
+      <div class="import-sample-head">
+        <span class="import-sample-title" data-i18n="import.sampleTitle">示例文档 / AI 提示词</span>
+        <button type="button" class="btn btn-small btn-ghost" id="copyImportSample" data-i18n="import.copy">复制</button>
+      </div>
+      <pre class="import-sample" id="importSample" data-i18n="import.sample"></pre>
+      <textarea id="importText" class="import-textarea" rows="7" maxlength="20000" data-i18n-ph="import.placeholder" placeholder="把软件资料粘贴到这里，例如：&#10;软件名称：7-Zip&#10;简介：免费开源的文件压缩工具&#10;官方网站：https://www.7-zip.org/&#10;支持系统：Windows, Linux&#10;授权方式：免费"></textarea>
+      <label class="import-overwrite">
+        <input type="checkbox" id="importOverwrite">
+        <span data-i18n="import.overwrite">覆盖表单中已有内容</span>
+      </label>
+      <div class="form-error" id="importError"></div>
+    </div>
+    <div class="modal-foot modal-foot-bar import-foot">
+      <span class="import-foot-tip" data-i18n="import.footTip">识别只填表单，不会自动保存</span>
+      <div>
+        <button type="button" class="btn btn-ghost" id="cancelImport" data-i18n="import.cancel">取消</button>
+        <button type="button" class="btn btn-primary" id="applyImport" data-i18n="import.apply">识别并填入</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 删除卡片确认 -->
 <div class="modal-mask" id="deleteModal" hidden>
   <div class="modal modal-small">
@@ -571,7 +606,8 @@ docker compose exec -e RESET_PASSWORD=新密码 software-hub python app/reset_pa
 
 <div class="toast" id="toast"></div>
 
-<script src="/static/app.js?v=2.4.4"></script>
-<script src="/static/scroll-jump.js?v=2.4.4"></script>
+<script src="/static/import-parser.js?v=2.4.5"></script>
+<script src="/static/app.js?v=2.4.5"></script>
+<script src="/static/scroll-jump.js?v=2.4.5"></script>
 </body>
 </html>

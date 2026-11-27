@@ -849,6 +849,173 @@ button, input, textarea, select { font-family: inherit; }
 
 .modal-body { padding: 18px 20px 20px; overflow-y: auto; }
 
+.modal-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------------- 导入软件信息 ---------------- */
+#importSummary {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 9px;
+  background: var(--bg-soft, #f8fafc);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-line;
+}
+
+#importSummary.has-warning {
+  border-left-color: var(--danger);
+}
+
+.import-mask { z-index: 70; }
+
+.import-modal { max-width: 760px; }
+
+.import-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.import-hint {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.import-sample-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.import-sample-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.import-sample {
+  flex: 0 0 170px;
+  height: 170px;
+  margin: 0;
+  padding: 11px 13px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-soft, #f8fafc);
+  color: var(--text);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+}
+
+.import-textarea {
+  flex: 0 0 auto;
+  width: 100%;
+  height: 128px;
+  min-height: 128px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: #fbfcfe;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+}
+
+.import-textarea:focus {
+  border-color: var(--primary);
+  background: var(--panel);
+}
+
+.import-overwrite {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.import-overwrite input { accent-color: var(--primary); }
+
+.import-foot {
+  padding: 12px 20px;
+  margin-top: 0;
+}
+
+.import-foot .btn { margin-left: 8px; }
+
+.import-foot-tip {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+[data-theme="dark"] .import-sample,
+[data-theme="dark"] #importSummary {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+[data-theme="dark"] .import-textarea {
+  background: #151b24;
+}
+
+[data-theme="dark"] .import-textarea:focus {
+  background: var(--panel);
+}
+
+@media (max-width: 720px) {
+  .import-modal { max-width: 100%; }
+  .import-sample {
+    flex-basis: 200px;
+    height: 200px;
+  }
+  .import-textarea {
+    min-height: 150px;
+    height: 150px;
+  }
+  .import-foot {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .import-foot-tip { order: 2; }
+  .import-foot > div { align-self: flex-end; }
+}
+
+@media (max-height: 620px) {
+  .import-hint { display: none; }
+  .import-body {
+    gap: 8px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .import-sample {
+    flex-basis: 88px;
+    height: 88px;
+  }
+  .import-textarea {
+    height: 96px;
+    min-height: 96px;
+  }
+}
+
+
 /* 卡片背景色：色板 / 颜色代码 / 恢复默认 同一行，间距一致 */
 .color-input {
   display: flex;
