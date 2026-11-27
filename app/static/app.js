@@ -113,6 +113,7 @@
       'empty.search': '没有匹配的软件，换个关键字试试。',
       'empty.add': '＋ 添加软件',
       'card.edit': '编辑',
+      'card.share': '分享',
       'card.pin': '置顶',
       'card.unpin': '取消置顶',
       'card.badgePin': '置顶',
@@ -199,7 +200,7 @@
       'import.summaryNoName': '未识别到软件名称，请手动填写。',
       'import.warnNameTooLong': '软件名称超过 60 字，已截断。',
       'import.warnDescriptionTooLong': '简介超过 4000 字，已截断。',
-      'import.warnBadColor': '背景色格式不正确，已忽略。',
+      'import.warnBadColor': '背景色格式不正确，已忽略。正确示例：卡片背景色：#F3F4F6 或 #FFF。',
       'import.warnInvalidUrl': '已跳过 {n} 个无效链接。',
       'import.warnInvalidUrlItems': '已跳过 {n} 个无效链接，位置：{items}',
       'import.warnDownloadLimit': '下载地址超过 20 条，已忽略 {n} 条。',
@@ -243,7 +244,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.4.6',
+      'settings.aboutVersion': '当前版本：2.4.7',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -271,6 +272,7 @@
       'toast.logout': '已退出登录',
       'toast.settingsSaved': '设置已保存',
       'toast.titleCopied': '已复制标题：{name}',
+      'toast.shareCopied': '已复制「{name}」的软件资料',
       'toast.copyFailed': '复制失败，请手动选择文字',
       'toast.loginGuardSaved': '登录防护设置已保存',
       'toast.accountSaved': '账号已更新',
@@ -392,6 +394,7 @@
       'empty.search': 'No matches. Try another keyword.',
       'empty.add': '＋ Add software',
       'card.edit': 'Edit',
+      'card.share': 'Share',
       'card.pin': 'Pin',
       'card.unpin': 'Unpin',
       'card.badgePin': 'Pinned',
@@ -478,7 +481,7 @@
       'import.summaryNoName': 'No software name detected — please fill it manually.',
       'import.warnNameTooLong': 'The name exceeded 60 characters and was truncated.',
       'import.warnDescriptionTooLong': 'The description exceeded 4,000 characters and was truncated.',
-      'import.warnBadColor': 'Invalid background color — ignored.',
+      'import.warnBadColor': 'Invalid background color — ignored. Example: Card background: #F3F4F6 or #FFF.',
       'import.warnInvalidUrl': 'Skipped {n} invalid link(s).',
       'import.warnInvalidUrlItems': 'Skipped {n} invalid link(s). Location: {items}',
       'import.warnDownloadLimit': 'More than 20 downloads — {n} were ignored.',
@@ -522,7 +525,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.4.6',
+      'settings.aboutVersion': 'Current version: 2.4.7',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -551,6 +554,7 @@
       'toast.logout': 'Signed out',
       'toast.settingsSaved': 'Settings saved',
       'toast.titleCopied': 'Title copied: {name}',
+      'toast.shareCopied': 'Copied software details for “{name}”',
       'toast.copyFailed': 'Copy failed, select the text manually',
       'toast.loginGuardSaved': 'Sign-in protection saved',
       'toast.accountSaved': 'Account updated',
@@ -1600,12 +1604,46 @@
     return luminance < 0.55 ? '#ffffff' : '#1f2329';
   }
 
+  function shareTextForItem(item) {
+    const lines = [];
+    const add = (label, value) => {
+      const text = String(value == null ? '' : value).trim();
+      if (text) lines.push(`${label}：${text}`);
+    };
+    add('软件名称', item.name);
+    add('简介', item.description);
+    ['url_home', 'url_github', 'url_release', 'url_doc'].forEach((key) => {
+      const url = safeHref(item[key]);
+      const labels = { url_home: '官方网站', url_github: 'GitHub', url_release: '版本更新', url_doc: '官方文档' };
+      add(labels[key], url);
+    });
+    add('图标', safeHref(item.logo));
+    const platforms = PLATFORMS.filter((p) => item.platforms && item.platforms[p.key]).map((p) => p.label);
+    add('支持系统', platforms.join(' / '));
+    add('授权方式', (item.licenses || []).map((key) => t(`license.${key}`)).join(' / '));
+    (item.downloads || []).forEach((d) => {
+      const link = safeHref(d && d.link);
+      if (link) lines.push(`下载地址：${String((d && d.text) || '').trim() || '下载'} | ${link}`);
+    });
+    (item.extra_links || []).forEach((d) => {
+      const link = safeHref(d && d.link);
+      if (link) lines.push(`其他链接：${String((d && d.text) || '').trim() || '链接'} | ${link}`);
+    });
+    add('卡片背景色', item.card_color);
+    return lines.join('\n');
+  }
+
   function cardActionsHtml(item, compact) {
-    if (!state.user) return '';
     const ico = (emoji) => `<span class="btn-ico">${emoji}</span>`;
     const txt = (text) => (compact ? '' : `<span class="btn-txt">${escapeHtml(text)}</span>`);
+    const shareLabel = t('card.share');
+    const shareBtn = `<button class="mini-btn share" data-share="${item.id}" title="${escapeHtml(shareLabel)}">${ico('📤')}${txt(shareLabel)}</button>`;
+    if (!state.user) {
+      return `<div class="card-actions">${shareBtn}</div>`;
+    }
     const pinLabel = item.pinned ? t('card.unpin') : t('card.pin');
     return `<div class="card-actions">
+        ${shareBtn}
         <button class="mini-btn pin ${item.pinned ? 'active' : ''}" data-pin="${item.id}" title="${escapeHtml(pinLabel)}">${ico('📌')}${txt(pinLabel)}</button>
         <button class="mini-btn" data-edit="${item.id}" title="${escapeHtml(t('card.edit'))}">${ico('✏️')}${txt(t('card.edit'))}</button>
         <button class="mini-btn danger" data-remove="${item.id}" title="${escapeHtml(t('card.remove'))}">${ico('❌')}${txt(t('card.remove'))}</button>
@@ -2114,8 +2152,9 @@
       case 'badColor': return t('import.warnBadColor');
       case 'invalidUrl': {
         const items = warning.params && Array.isArray(warning.params.items) ? warning.params.items : [];
-        if (items.length) return t('import.warnInvalidUrlItems', { n, items: items.join('；') });
-        return t('import.warnInvalidUrl', { n });
+        const linkCount = (warning.params && warning.params.count) || n;
+        if (items.length) return t('import.warnInvalidUrlItems', { n: linkCount, items: items.join('；') });
+        return t('import.warnInvalidUrl', { n: linkCount });
       }
       case 'downloadLimit': return t('import.warnDownloadLimit', { n });
       case 'extraLimit': return t('import.warnExtraLimit', { n });
@@ -2851,6 +2890,15 @@
           ok ? t('toast.titleCopied', { name: item.name }) : t('toast.copyFailed'),
           !ok
         );
+      }
+      return;
+    }
+    const shareBtn = event.target.closest('[data-share]');
+    if (shareBtn) {
+      const item = state.items.find((i) => String(i.id) === String(shareBtn.dataset.share));
+      if (item) {
+        const ok = await copyToClipboard(shareTextForItem(item));
+        toast(ok ? t('toast.shareCopied', { name: item.name }) : t('toast.copyFailed'), !ok);
       }
       return;
     }

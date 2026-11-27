@@ -85,6 +85,16 @@ assert.ok(invalid.params.items.some((item) => item.includes('下载地址：坏�
 
 const noColor = parser.parseImportText('软件名称：NoColor\n简介：没有背景色');
 assert.strictEqual(noColor.fields.card_color, '');
+assert.ok(!noColor.warnings.some((item) => item.code === 'badColor'));
+
+const optionalLinks = parser.parseImportText('软件名称：OptionalLinks\nGitHub：\n版本更新：\n官方文档：\n图标：\n其他链接：\n卡片背景色：');
+assert.ok(!optionalLinks.warnings.some((item) => item.code === 'badColor'));
+const optionalInvalid = optionalLinks.warnings.find((item) => item.code === 'invalidUrl');
+assert.strictEqual(optionalInvalid.params.count, 5);
+assert.strictEqual(optionalInvalid.params.items.length, 5);
+
+const badColor = parser.parseImportText('软件名称：BadColor\n卡片背景色：浅灰色');
+assert.ok(badColor.warnings.some((item) => item.code === 'badColor'));
 
 const fenced = parser.parseImportText('```text\n软件名称：Fenced\n```');
 assert.strictEqual(fenced.fields.name, 'Fenced');

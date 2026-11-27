@@ -470,7 +470,12 @@
       }
 
       if (field === 'card_color') {
-        const color = String(value || '').trim().replace(/^#/, '');
+        const raw = String(value || '').trim();
+        if (!raw) {
+          state.card_color = '';
+          return;
+        }
+        const color = raw.replace(/^#/, '');
         if (/^[0-9a-fA-F]{3,8}$/.test(color)) {
           state.card_color = `#${color}`;
         } else {
