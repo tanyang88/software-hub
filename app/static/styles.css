@@ -732,6 +732,21 @@ button, input, textarea, select { font-family: inherit; }
 
 .card:hover .card-actions { opacity: 1; }
 
+.card-actions .card-update {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  cursor: default;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.card-compact .card-update { display: none; }
+.card-grid[data-cols="2"] .card-update { display: none; }
+@media (max-width: 480px) {
+  .card-actions .card-update { display: none; }
+}
+
 .mini-btn {
   border: 1px solid var(--border-strong);
   background: #fff;

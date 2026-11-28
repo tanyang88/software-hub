@@ -114,6 +114,7 @@
       'empty.add': '＋ 添加软件',
       'card.edit': '编辑',
       'card.share': '分享',
+      'card.updateDate': '更新日期',
       'card.pin': '置顶',
       'card.unpin': '取消置顶',
       'card.badgePin': '置顶',
@@ -244,7 +245,7 @@
       'settings.searchSection': '搜索',
       'settings.searchHighlight': '搜索结果高亮关键词显示',
       'settings.about': '关于',
-      'settings.aboutVersion': '当前版本：2.4.8',
+      'settings.aboutVersion': '当前版本：2.4.9',
       'settings.account': '账号安全',
       'settings.currentPwd': '当前密码',
       'settings.newUsername': '新用户名',
@@ -395,6 +396,7 @@
       'empty.add': '＋ Add software',
       'card.edit': 'Edit',
       'card.share': 'Share',
+      'card.updateDate': 'Updated',
       'card.pin': 'Pin',
       'card.unpin': 'Unpin',
       'card.badgePin': 'Pinned',
@@ -525,7 +527,7 @@
       'settings.searchSection': 'Search',
       'settings.searchHighlight': 'Highlight matched keywords',
       'settings.about': 'About',
-      'settings.aboutVersion': 'Current version: 2.4.8',
+      'settings.aboutVersion': 'Current version: 2.4.9',
       'settings.account': 'Account security',
       'settings.currentPwd': 'Current password',
       'settings.newUsername': 'New username',
@@ -1632,16 +1634,28 @@
     return lines.join('\n');
   }
 
+  function formatUpdateDate(item) {
+    const raw = String((item && (item.updated_at || item.created_at)) || '').trim();
+    const match = raw.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (!match) return '';
+    return `${match[1]}年${String(Number(match[2])).padStart(2, '0')}月${String(Number(match[3])).padStart(2, '0')}日`;
+  }
+
   function cardActionsHtml(item, compact) {
     const ico = (emoji) => `<span class="btn-ico">${emoji}</span>`;
     const txt = (text) => (compact ? '' : `<span class="btn-txt">${escapeHtml(text)}</span>`);
+    const updateDate = formatUpdateDate(item);
+    const updateBadge = updateDate
+      ? `<span class="mini-btn card-update">${escapeHtml(t('card.updateDate'))}：${updateDate}</span>`
+      : '';
     const shareLabel = t('card.share');
     const shareBtn = `<button class="mini-btn share" data-share="${item.id}" title="${escapeHtml(shareLabel)}">${ico('📤')}${txt(shareLabel)}</button>`;
     if (!state.user) {
-      return `<div class="card-actions">${shareBtn}</div>`;
+      return `<div class="card-actions">${updateBadge}${shareBtn}</div>`;
     }
     const pinLabel = item.pinned ? t('card.unpin') : t('card.pin');
     return `<div class="card-actions">
+        ${updateBadge}
         ${shareBtn}
         <button class="mini-btn pin ${item.pinned ? 'active' : ''}" data-pin="${item.id}" title="${escapeHtml(pinLabel)}">${ico('📌')}${txt(pinLabel)}</button>
         <button class="mini-btn" data-edit="${item.id}" title="${escapeHtml(t('card.edit'))}">${ico('✏️')}${txt(t('card.edit'))}</button>
