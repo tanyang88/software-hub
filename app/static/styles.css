@@ -741,7 +741,7 @@ button, input, textarea, select { font-family: inherit; }
   font-variant-numeric: tabular-nums;
 }
 
-.card-compact .card-update { display: none; }
+.card-compact .card-actions .card-update { display: none; }
 .card-grid[data-cols="2"] .card-update { display: none; }
 @media (max-width: 480px) {
   .card-actions .card-update { display: none; }
